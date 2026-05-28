@@ -69,6 +69,7 @@ model DeceMember {
   id        String    @id @default(uuid())
   name      String
   email     String    @unique
+  password  String    @default("")
   role      DeceRole  @default(COUNSELOR)
   active    Boolean   @default(true)
   createdAt DateTime  @default(now())

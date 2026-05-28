@@ -6,23 +6,23 @@ import {
   Body,
   Param,
   Query,
+  UseGuards,
+  Request,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { HarassmentType, Priority, ReportStatus } from '@prisma/client';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/reports')
+@UseGuards(JwtAuthGuard)
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
-
-  // ── Creación desde el bot ──────────────────────────────────────────────
 
   @Post()
   create(@Body() dto: CreateReportDto) {
     return this.reportService.create(dto);
   }
-
-  // ── Listado con filtros (panel DECE) ───────────────────────────────────
 
   @Get()
   findAll(
@@ -43,38 +43,29 @@ export class ReportController {
     });
   }
 
-  // ── Estadísticas para el dashboard ────────────────────────────────────
-
   @Get('stats')
   getStats() {
     return this.reportService.getStats();
   }
-
-  // ── Detalle por número de reporte (legible) ────────────────────────────
 
   @Get('number/:reportNumber')
   findByNumber(@Param('reportNumber') reportNumber: string) {
     return this.reportService.findByReportNumber(parseInt(reportNumber));
   }
 
-  // ── Detalle por UUID ──────────────────────────────────────────────────
-
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.reportService.findOne(id);
   }
 
-  // ── Cambiar estado del caso ────────────────────────────────────────────
-
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: ReportStatus; changedById?: string; notes?: string },
+    @Body() body: { status: ReportStatus; notes?: string },
+    @Request() req: any,
   ) {
-    return this.reportService.updateStatus(id, body.status, body.changedById, body.notes);
+    return this.reportService.updateStatus(id, body.status, req.user.id, body.notes);
   }
-
-  // ── Cambiar prioridad ─────────────────────────────────────────────────
 
   @Patch(':id/priority')
   updatePriority(
@@ -84,8 +75,6 @@ export class ReportController {
     return this.reportService.updatePriority(id, body.priority);
   }
 
-  // ── Asignar a un consejero DECE ────────────────────────────────────────
-
   @Patch(':id/assign')
   assignTo(
     @Param('id') id: string,
@@ -94,14 +83,13 @@ export class ReportController {
     return this.reportService.assignTo(id, body.assignedToId);
   }
 
-  // ── Notas internas del caso ────────────────────────────────────────────
-
   @Post(':id/notes')
   addNote(
     @Param('id') id: string,
-    @Body() body: { authorId: string; content: string },
+    @Body() body: { content: string },
+    @Request() req: any,
   ) {
-    return this.reportService.addNote(id, body.authorId, body.content);
+    return this.reportService.addNote(id, req.user.id, body.content);
   }
 
   @Get(':id/notes')
