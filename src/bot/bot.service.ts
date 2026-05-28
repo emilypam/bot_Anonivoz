@@ -16,6 +16,8 @@ const INFORMANT_TYPES = ['Víctima', 'Testigo'];
 const BUTTON_ONLY_STEPS = [0, 1, 2, 3, 4, 7, 8];
 
 interface BotSession extends Scenes.WizardSessionData {
+  institutionId?: string;
+  institutionName?: string;
   informantType?: string;
   harassmentType?: string;
   frequencyLevel?: string;
@@ -432,6 +434,7 @@ export class BotService {
     try {
       const report = await this.reportService.create({
         telegramUserId: String(ctx.from?.id ?? 'unknown'),
+        institutionId: ctx.session.institutionId,
         informantType: ctx.session.informantType ?? '',
         harassmentType: ctx.session.harassmentType ?? '',
         frequencyLevel: ctx.session.frequencyLevel ?? '',
@@ -462,18 +465,50 @@ export class BotService {
   }
 
   private setupCommands() {
-    this.bot.command('start', (ctx) =>
-      ctx.reply(
-        '🛡️ *Bienvenido a AnonIvoz*\n\n' +
-          'Soy un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
-          '🔒 Tu identidad está protegida en todo momento.\n' +
-          '📋 Usa /report para registrar un incidente.\n' +
-          '❓ Usa /help para más información.',
+    this.bot.command('start', async (ctx) => {
+      const code = (ctx as any).startPayload as string | undefined;
+
+      if (code) {
+        const institution = await this.prisma.institution.findUnique({
+          where: { code: code.trim().toUpperCase() },
+        });
+
+        if (!institution || !institution.active) {
+          return ctx.reply(
+            'El enlace de acceso no es válido o la institución no está activa.\n\n' +
+              'Solicita el QR o enlace correcto a tu institución educativa.',
+          );
+        }
+
+        ctx.session.institutionId = institution.id;
+        ctx.session.institutionName = institution.name;
+
+        return ctx.reply(
+          `*Bienvenido a AnoniVoz*\n\n` +
+            `Institución: *${institution.name}*\n\n` +
+            'Este es un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
+            'Tu identidad está protegida en todo momento.\n' +
+            'Usa /report para registrar un incidente.\n' +
+            'Usa /help para más información.',
+          { parse_mode: 'Markdown' },
+        );
+      }
+
+      return ctx.reply(
+        '*Bienvenido a AnoniVoz*\n\n' +
+          'Para registrar un reporte debes acceder a través del enlace o código QR de tu institución educativa.\n\n' +
+          'Solicítalo a las autoridades de tu colegio.',
         { parse_mode: 'Markdown' },
-      ),
-    );
+      );
+    });
 
     this.bot.command('report', async (ctx) => {
+      if (!ctx.session.institutionId) {
+        return ctx.reply(
+          'Para registrar un reporte debes acceder primero a través del enlace de tu institución.\n\n' +
+            'Solicita el QR o enlace a las autoridades de tu colegio.',
+        );
+      }
       await ctx.reply(
         '📋 Vamos a registrar tu reporte paso a paso.\n\n' +
           'En la mayoría de pasos solo debes presionar un botón. Solo en algunos momentos necesitarás escribir texto.',

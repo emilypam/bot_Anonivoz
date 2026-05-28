@@ -5,6 +5,7 @@ import { BotModule } from './bot/bot.module';
 import { ReportModule } from './report/report.module';
 import { AuthModule } from './auth/auth.module';
 import { DeceModule } from './dece/dece.module';
+import { InstitutionModule } from './institution/institution.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { DeceModule } from './dece/dece.module';
     ReportModule,
     AuthModule,
     DeceModule,
+    InstitutionModule,
   ],
 })
 export class AppModule {}

@@ -32,7 +32,14 @@ export class ReportController {
     @Query('priority') priority?: Priority,
     @Query('harassmentType') harassmentType?: HarassmentType,
     @Query('assignedToId') assignedToId?: string,
+    @Query('institutionId') institutionIdParam?: string,
+    @Request() req?: any,
   ) {
+    const user = req?.user;
+    const institutionId = user?.isAdmin
+      ? (institutionIdParam ?? undefined)
+      : (user?.institutionId ?? undefined);
+
     return this.reportService.findAll({
       limit: parseInt(limit),
       offset: parseInt(offset),
@@ -40,12 +47,15 @@ export class ReportController {
       priority,
       harassmentType,
       assignedToId,
+      institutionId,
     });
   }
 
   @Get('stats')
-  getStats() {
-    return this.reportService.getStats();
+  getStats(@Request() req: any) {
+    const user = req.user;
+    const institutionId = user.isAdmin ? undefined : user.institutionId;
+    return this.reportService.getStats(institutionId);
   }
 
   @Get('number/:reportNumber')

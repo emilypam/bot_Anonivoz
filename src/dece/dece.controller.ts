@@ -5,6 +5,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -22,23 +23,31 @@ export class DeceController {
   }
 
   @Get('members')
-  findAll() {
-    return this.dece.findAll();
+  findAll(
+    @Request() req: any,
+    @Query('institutionId') institutionIdParam?: string,
+  ) {
+    const user = req.user;
+    const institutionId = user.isAdmin
+      ? (institutionIdParam ?? undefined)
+      : (user.institutionId ?? undefined);
+    return this.dece.findAll({ institutionId });
   }
 
   @Post('members')
   create(
-    @Body()
-    body: { name: string; email: string; password: string; role: string },
+    @Body() body: { name: string; email: string; password: string; role: string; institutionId?: string },
+    @Request() req: any,
   ) {
-    return this.dece.create(body);
+    const user = req.user;
+    const institutionId = user.isAdmin ? body.institutionId : user.institutionId;
+    return this.dece.create({ ...body, institutionId });
   }
 
   @Patch('members/:id')
   update(
     @Param('id') id: string,
-    @Body()
-    body: { name?: string; email?: string; role?: string; active?: boolean },
+    @Body() body: { name?: string; email?: string; role?: string; active?: boolean; institutionId?: string },
   ) {
     return this.dece.update(id, body);
   }

@@ -91,6 +91,7 @@ export class ReportService {
       const report = await tx.report.create({
         data: {
           telegramUserId: data.telegramUserId,
+          institutionId: data.institutionId ?? null,
           informantType: INFORMANT_MAP[data.informantType],
           wantsContact: data.wantsContact,
           previousReport: data.previousReport,
@@ -145,14 +146,16 @@ export class ReportService {
     priority?: Priority;
     harassmentType?: HarassmentType;
     assignedToId?: string;
+    institutionId?: string | null;
   } = {}) {
-    const { limit = 20, offset = 0, status, priority, harassmentType, assignedToId } = options;
+    const { limit = 20, offset = 0, status, priority, harassmentType, assignedToId, institutionId } = options;
 
     const where: any = {};
     if (status) where.status = status;
     if (priority) where.priority = priority;
     if (assignedToId) where.assignedToId = assignedToId;
     if (harassmentType) where.incident = { harassmentType };
+    if (institutionId) where.institutionId = institutionId;
 
     const [data, total] = await Promise.all([
       this.prisma.report.findMany({
@@ -262,8 +265,10 @@ export class ReportService {
 
   // ── Estadísticas para el dashboard DECE ─────────────────────────────────
 
-  async getStats() {
+  async getStats(institutionId?: string | null) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const scope = institutionId ? { institutionId } : {};
+    const incidentScope = institutionId ? { report: { institutionId } } : {};
 
     const [
       total,
@@ -276,15 +281,15 @@ export class ReportService {
       pendingCount,
       urgentCount,
     ] = await Promise.all([
-      this.prisma.report.count(),
-      this.prisma.report.count({ where: { createdAt: { gte: sevenDaysAgo } } }),
-      this.prisma.report.groupBy({ by: ['status'], _count: { _all: true } }),
-      this.prisma.report.groupBy({ by: ['priority'], _count: { _all: true } }),
-      this.prisma.incident.groupBy({ by: ['harassmentType'], _count: { _all: true } }),
-      this.prisma.incident.groupBy({ by: ['frequencyLevel'], _count: { _all: true } }),
-      this.prisma.incident.groupBy({ by: ['locationTag'], _count: { _all: true } }),
-      this.prisma.report.count({ where: { status: 'PENDING' } }),
-      this.prisma.report.count({ where: { priority: 'URGENT' } }),
+      this.prisma.report.count({ where: scope }),
+      this.prisma.report.count({ where: { ...scope, createdAt: { gte: sevenDaysAgo } } }),
+      this.prisma.report.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
+      this.prisma.report.groupBy({ by: ['priority'], where: scope, _count: { _all: true } }),
+      this.prisma.incident.groupBy({ by: ['harassmentType'], where: incidentScope, _count: { _all: true } }),
+      this.prisma.incident.groupBy({ by: ['frequencyLevel'], where: incidentScope, _count: { _all: true } }),
+      this.prisma.incident.groupBy({ by: ['locationTag'], where: incidentScope, _count: { _all: true } }),
+      this.prisma.report.count({ where: { ...scope, status: 'PENDING' } }),
+      this.prisma.report.count({ where: { ...scope, priority: 'URGENT' } }),
     ]);
 
     return {

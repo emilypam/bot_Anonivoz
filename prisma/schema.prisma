@@ -10,83 +10,117 @@ datasource db {
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum InformantType {
-  VICTIM   // Víctima
-  WITNESS  // Testigo
+  VICTIM
+  WITNESS
 }
 
 enum HarassmentType {
-  PHYSICAL      // Físico
-  VERBAL        // Verbal
-  SOCIAL        // Social / Exclusión
-  CYBERBULLYING // Ciberacoso
+  PHYSICAL
+  VERBAL
+  SOCIAL
+  CYBERBULLYING
 }
 
 enum FrequencyLevel {
-  ONCE    // Una sola vez
-  WEEKLY  // Semanalmente
-  DAILY   // Diariamente
+  ONCE
+  WEEKLY
+  DAILY
 }
 
 enum LocationTag {
-  CLASSROOM    // Salón de clases
-  RECESS       // Recreo / Patios
-  SOCIAL_MEDIA // Redes Sociales
-  OUTSIDE      // Fuera de la escuela
+  CLASSROOM
+  RECESS
+  SOCIAL_MEDIA
+  OUTSIDE
 }
 
 enum IncidentDateApprox {
-  TODAY        // Hoy
-  YESTERDAY    // Ayer
-  THIS_WEEK    // Esta semana
-  LAST_WEEK    // La semana pasada
-  OVER_A_MONTH // Hace más de un mes
+  TODAY
+  YESTERDAY
+  THIS_WEEK
+  LAST_WEEK
+  OVER_A_MONTH
 }
 
 enum ReportStatus {
-  PENDING    // Pendiente de revisión
-  IN_REVIEW  // En revisión
-  RESOLVED   // Resuelto
-  DISMISSED  // Desestimado
+  PENDING
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
 }
 
 enum Priority {
-  LOW    // Baja
-  MEDIUM // Media
-  HIGH   // Alta
-  URGENT // Urgente — requiere atención inmediata
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
 }
 
 enum DeceRole {
-  COUNSELOR   // Consejero/a
-  COORDINATOR // Coordinador/a DECE
-  DIRECTOR    // Director/a de la institución (solo lectura)
+  COUNSELOR
+  COORDINATOR
+  DIRECTOR
 }
 
 // ─── Tablas ───────────────────────────────────────────────────────────────────
 
-// Personal del DECE que gestiona los reportes en el panel
-model DeceMember {
-  id        String    @id @default(uuid())
+// Super administrador global del sistema (accede a todas las instituciones)
+model Admin {
+  id        String   @id @default(uuid())
   name      String
-  email     String    @unique
-  password  String    @default("")
-  role      DeceRole  @default(COUNSELOR)
-  active    Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  email     String   @unique
+  password  String   @default("")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  assignedReports Report[]        @relation("AssignedTo")
+  @@index([email])
+}
+
+// Institución educativa (Fe y Alegría)
+model Institution {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique   // Código único para el deep link del bot
+  city      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members DeceMember[]
+  reports Report[]
+
+  @@index([code])
+  @@index([active])
+}
+
+// Personal del DECE — pertenece a una institución
+model DeceMember {
+  id            String       @id @default(uuid())
+  institutionId String?
+  name          String
+  email         String       @unique
+  password      String       @default("")
+  role          DeceRole     @default(COUNSELOR)
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  institution   Institution? @relation(fields: [institutionId], references: [id])
+  assignedReports Report[]   @relation("AssignedTo")
   notes           CaseNote[]
   statusChanges   StatusHistory[]
 
   @@index([email])
   @@index([active])
+  @@index([institutionId])
 }
 
-// Reporte principal — datos del denunciante y estado del caso
+// Reporte principal — pertenece a una institución
 model Report {
   id             String        @id @default(uuid())
   reportNumber   Int           @unique @default(autoincrement())
+  institutionId  String?
   telegramUserId String
   informantType  InformantType
   wantsContact   Boolean       @default(false)
@@ -97,6 +131,7 @@ model Report {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
+  institution   Institution?    @relation(fields: [institutionId], references: [id])
   assignedTo    DeceMember?     @relation("AssignedTo", fields: [assignedToId], references: [id])
   incident      Incident?
   aggressors    Aggressor[]
@@ -111,9 +146,9 @@ model Report {
   @@index([informantType])
   @@index([assignedToId])
   @@index([telegramUserId])
+  @@index([institutionId])
 }
 
-// Detalles del incidente — qué, cuándo, dónde, frecuencia y descripción
 model Incident {
   id                 String             @id @default(uuid())
   reportId           String             @unique
@@ -131,7 +166,6 @@ model Incident {
   @@index([locationTag])
 }
 
-// Datos del agresor — separado para permitir múltiples en el futuro
 model Aggressor {
   id          String   @id @default(uuid())
   reportId    String
@@ -143,7 +177,6 @@ model Aggressor {
   @@index([reportId])
 }
 
-// Testigos del incidente
 model Witness {
   id          String   @id @default(uuid())
   reportId    String
@@ -155,7 +188,6 @@ model Witness {
   @@index([reportId])
 }
 
-// Evidencias adjuntas (URLs de fotos, capturas, etc.)
 model Evidence {
   id        String   @id @default(uuid())
   reportId  String
@@ -167,13 +199,12 @@ model Evidence {
   @@index([reportId])
 }
 
-// Notas internas del DECE sobre el caso
 model CaseNote {
-  id         String     @id @default(uuid())
-  reportId   String
-  authorId   String
-  content    String     @db.Text
-  createdAt  DateTime   @default(now())
+  id        String   @id @default(uuid())
+  reportId  String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
 
   report Report     @relation(fields: [reportId], references: [id], onDelete: Cascade)
   author DeceMember @relation(fields: [authorId], references: [id])
@@ -182,7 +213,6 @@ model CaseNote {
   @@index([authorId])
 }
 
-// Auditoría completa de cada cambio de estado — quién cambió qué y cuándo
 model StatusHistory {
   id          String        @id @default(uuid())
   reportId    String

@@ -10,15 +10,19 @@ import * as bcrypt from 'bcrypt';
 export class DeceService {
   constructor(private prisma: PrismaService) {}
 
-  findAll() {
+  findAll(options: { institutionId?: string | null } = {}) {
+    const where = options.institutionId ? { institutionId: options.institutionId } : {};
     return this.prisma.deceMember.findMany({
+      where,
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
         active: true,
+        institutionId: true,
         createdAt: true,
+        institution: { select: { id: true, name: true, code: true } },
         _count: { select: { assignedReports: true } },
       },
       orderBy: { name: 'asc' },
@@ -46,10 +50,9 @@ export class DeceService {
     email: string;
     password: string;
     role: string;
+    institutionId?: string;
   }) {
-    const exists = await this.prisma.deceMember.findUnique({
-      where: { email: data.email },
-    });
+    const exists = await this.prisma.deceMember.findUnique({ where: { email: data.email } });
     if (exists) throw new ConflictException('El correo ya está registrado');
     const hashed = await bcrypt.hash(data.password, 10);
     return this.prisma.deceMember.create({
@@ -58,19 +61,20 @@ export class DeceService {
         email: data.email,
         password: hashed,
         role: data.role as any,
+        institutionId: data.institutionId ?? null,
       },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, institutionId: true },
     });
   }
 
   update(
     id: string,
-    data: { name?: string; email?: string; role?: string; active?: boolean },
+    data: { name?: string; email?: string; role?: string; active?: boolean; institutionId?: string },
   ) {
     return this.prisma.deceMember.update({
       where: { id },
       data: data as any,
-      select: { id: true, name: true, email: true, role: true, active: true },
+      select: { id: true, name: true, email: true, role: true, active: true, institutionId: true },
     });
   }
 

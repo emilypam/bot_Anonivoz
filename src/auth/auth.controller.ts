@@ -11,10 +11,17 @@ export class AuthController {
     return this.auth.login(body.email, body.password);
   }
 
-  @Post('bootstrap')
-  bootstrap(
+  @Post('admin/bootstrap')
+  bootstrapAdmin(
     @Body() body: { name: string; email: string; password: string; key: string },
   ) {
-    return this.auth.bootstrap(body);
+    return this.auth.bootstrapAdmin(body);
+  }
+
+  @Post('bootstrap')
+  bootstrapDece(
+    @Body() body: { name: string; email: string; password: string; key: string },
+  ) {
+    return this.auth.bootstrapDece(body);
   }
 }
