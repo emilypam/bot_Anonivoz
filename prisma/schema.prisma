@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum InformantType {
+  VICTIM   // Víctima
+  WITNESS  // Testigo
+}
+
+enum HarassmentType {
+  PHYSICAL      // Físico
+  VERBAL        // Verbal
+  SOCIAL        // Social / Exclusión
+  CYBERBULLYING // Ciberacoso
+}
+
+enum FrequencyLevel {
+  ONCE    // Una sola vez
+  WEEKLY  // Semanalmente
+  DAILY   // Diariamente
+}
+
+enum LocationTag {
+  CLASSROOM    // Salón de clases
+  RECESS       // Recreo / Patios
+  SOCIAL_MEDIA // Redes Sociales
+  OUTSIDE      // Fuera de la escuela
+}
+
+enum IncidentDateApprox {
+  TODAY        // Hoy
+  YESTERDAY    // Ayer
+  THIS_WEEK    // Esta semana
+  LAST_WEEK    // La semana pasada
+  OVER_A_MONTH // Hace más de un mes
+}
+
+enum ReportStatus {
+  PENDING    // Pendiente de revisión
+  IN_REVIEW  // En revisión
+  RESOLVED   // Resuelto
+  DISMISSED  // Desestimado
+}
+
+enum Priority {
+  LOW    // Baja
+  MEDIUM // Media
+  HIGH   // Alta
+  URGENT // Urgente — requiere atención inmediata
+}
+
+enum DeceRole {
+  COUNSELOR   // Consejero/a
+  COORDINATOR // Coordinador/a DECE
+  DIRECTOR    // Director/a de la institución (solo lectura)
+}
+
+// ─── Tablas ───────────────────────────────────────────────────────────────────
+
+// Personal del DECE que gestiona los reportes en el panel
+model DeceMember {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  role      DeceRole  @default(COUNSELOR)
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  assignedReports Report[]        @relation("AssignedTo")
+  notes           CaseNote[]
+  statusChanges   StatusHistory[]
+
+  @@index([email])
+  @@index([active])
+}
+
+// Reporte principal — datos del denunciante y estado del caso
+model Report {
+  id             String        @id @default(uuid())
+  reportNumber   Int           @unique @default(autoincrement())
+  telegramUserId String
+  informantType  InformantType
+  wantsContact   Boolean       @default(false)
+  previousReport Boolean       @default(false)
+  status         ReportStatus  @default(PENDING)
+  priority       Priority      @default(MEDIUM)
+  assignedToId   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  assignedTo    DeceMember?     @relation("AssignedTo", fields: [assignedToId], references: [id])
+  incident      Incident?
+  aggressors    Aggressor[]
+  witnesses     Witness[]
+  evidence      Evidence[]
+  notes         CaseNote[]
+  statusHistory StatusHistory[]
+
+  @@index([status])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([informantType])
+  @@index([assignedToId])
+  @@index([telegramUserId])
+}
+
+// Detalles del incidente — qué, cuándo, dónde, frecuencia y descripción
+model Incident {
+  id                 String             @id @default(uuid())
+  reportId           String             @unique
+  harassmentType     HarassmentType
+  frequencyLevel     FrequencyLevel
+  locationTag        LocationTag
+  incidentDateApprox IncidentDateApprox
+  description        String             @db.Text
+  createdAt          DateTime           @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([harassmentType])
+  @@index([frequencyLevel])
+  @@index([locationTag])
+}
+
+// Datos del agresor — separado para permitir múltiples en el futuro
+model Aggressor {
+  id          String   @id @default(uuid())
+  reportId    String
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}
+
+// Testigos del incidente
+model Witness {
+  id          String   @id @default(uuid())
+  reportId    String
+  description String   @db.Text
+  createdAt   DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}
+
+// Evidencias adjuntas (URLs de fotos, capturas, etc.)
+model Evidence {
+  id        String   @id @default(uuid())
+  reportId  String
+  url       String
+  createdAt DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+}
+
+// Notas internas del DECE sobre el caso
+model CaseNote {
+  id         String     @id @default(uuid())
+  reportId   String
+  authorId   String
+  content    String     @db.Text
+  createdAt  DateTime   @default(now())
+
+  report Report     @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  author DeceMember @relation(fields: [authorId], references: [id])
+
+  @@index([reportId])
+  @@index([authorId])
+}
+
+// Auditoría completa de cada cambio de estado — quién cambió qué y cuándo
+model StatusHistory {
+  id          String        @id @default(uuid())
+  reportId    String
+  changedById String?
+  oldStatus   ReportStatus?
+  newStatus   ReportStatus
+  notes       String?       @db.Text
+  changedAt   DateTime      @default(now())
+
+  report    Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  changedBy DeceMember? @relation(fields: [changedById], references: [id])
+
+  @@index([reportId])
+  @@index([changedAt])
+}
