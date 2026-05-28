@@ -279,8 +279,6 @@ export class ReportService {
       byStatus,
       byPriority,
       byHarassmentType,
-      byFrequency,
-      byLocation,
       pendingCount,
       urgentCount,
     ] = await Promise.all([
@@ -289,22 +287,18 @@ export class ReportService {
       this.prisma.report.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
       this.prisma.report.groupBy({ by: ['priority'], where: scope, _count: { _all: true } }),
       this.prisma.incident.groupBy({ by: ['harassmentType'], where: incidentScope, _count: { _all: true } }),
-      this.prisma.incident.groupBy({ by: ['frequencyLevel'], where: incidentScope, _count: { _all: true } }),
-      this.prisma.incident.groupBy({ by: ['locationTag'], where: incidentScope, _count: { _all: true } }),
       this.prisma.report.count({ where: { ...scope, status: 'PENDING' } }),
       this.prisma.report.count({ where: { ...scope, priority: 'URGENT' } }),
     ]);
 
     return {
       total,
-      lastSevenDays,
-      pendingCount,
-      urgentCount,
-      byStatus,
-      byPriority,
-      byHarassmentType,
-      byFrequency,
-      byLocation,
+      last7Days: lastSevenDays,
+      pending: pendingCount,
+      urgent: urgentCount,
+      byStatus: Object.fromEntries(byStatus.map(r => [r.status, r._count._all])),
+      byPriority: Object.fromEntries(byPriority.map(r => [r.priority, r._count._all])),
+      byHarassmentType: Object.fromEntries(byHarassmentType.map(r => [r.harassmentType, r._count._all])),
     };
   }
 }
