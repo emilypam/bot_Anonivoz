@@ -58,6 +58,9 @@ const REPORT_LIST_INCLUDE = {
   assignedTo: {
     select: { id: true, name: true, role: true },
   },
+  institution: {
+    select: { id: true, name: true },
+  },
   _count: {
     select: { notes: true },
   },
