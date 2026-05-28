@@ -466,7 +466,8 @@ export class BotService {
 
   private setupCommands() {
     this.bot.command('start', async (ctx) => {
-      const code = (ctx as any).startPayload as string | undefined;
+      const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
+      const code = text.split(' ')[1]?.trim() || undefined;
 
       if (code) {
         const institution = await this.prisma.institution.findUnique({
