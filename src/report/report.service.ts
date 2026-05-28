@@ -9,6 +9,7 @@ import {
   ReportStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import { CreateReportDto } from './dto/create-report.dto';
 
 // Mapeo de las opciones en español del bot a los enums de la BD
@@ -85,7 +86,10 @@ const REPORT_DETAIL_INCLUDE = {
 
 @Injectable()
 export class ReportService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notification: NotificationService,
+  ) {}
 
   // ── Creación desde el bot ────────────────────────────────────────────────
 
@@ -204,10 +208,10 @@ export class ReportService {
     changedById?: string,
     notes?: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
+    const report = await this.prisma.$transaction(async (tx) => {
       const current = await tx.report.findUnique({
         where: { id },
-        select: { status: true },
+        select: { status: true, telegramUserId: true, reportNumber: true },
       });
 
       if (!current) throw new NotFoundException(`Reporte ${id} no encontrado.`);
@@ -222,6 +226,15 @@ export class ReportService {
         include: REPORT_LIST_INCLUDE,
       });
     });
+
+    // Notificar fuera de la transacción — un fallo de Telegram no revierte el cambio
+    void this.notification.notifyStatusChange(
+      report.telegramUserId,
+      report.reportNumber,
+      newStatus,
+    );
+
+    return report;
   }
 
   async updatePriority(id: string, priority: Priority) {
