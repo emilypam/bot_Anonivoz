@@ -464,7 +464,7 @@ export class BotService {
   private setupCommands() {
     this.bot.command('start', (ctx) =>
       ctx.reply(
-        '🛡️ *Bienvenido a Tu Voz Segura*\n\n' +
+        '🛡️ *Bienvenido a AnonIvoz*\n\n' +
           'Soy un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
           '🔒 Tu identidad está protegida en todo momento.\n' +
           '📋 Usa /report para registrar un incidente.\n' +
@@ -483,7 +483,7 @@ export class BotService {
 
     this.bot.command('help', (ctx) =>
       ctx.reply(
-        '❓ *Ayuda — Tu Voz Segura*\n\n' +
+        '❓ *Ayuda — AnonIvoz*\n\n' +
           '/start — Mensaje de bienvenida\n' +
           '/report — Registrar un nuevo reporte\n' +
           '/help — Mostrar esta ayuda\n\n' +
