@@ -197,3 +197,9 @@ model StatusHistory {
   @@index([reportId])
   @@index([changedAt])
 }
+
+model TelegramSession {
+  key       String   @id
+  data      String   @db.Text
+  updatedAt DateTime @updatedAt
+}

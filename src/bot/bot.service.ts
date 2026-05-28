@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Context, Scenes, session, Telegraf } from 'telegraf';
+import { Context, Scenes, Telegraf } from 'telegraf';
 import { ReportService } from '../report/report.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 const HARASSMENT_TYPES = ['Físico', 'Verbal', 'Social/Exclusión', 'Ciberacoso'];
 const FREQUENCY_LEVELS = ['Una sola vez', 'Semanalmente', 'Diariamente'];
@@ -53,15 +54,35 @@ export class BotService {
   constructor(
     private configService: ConfigService,
     private reportService: ReportService,
+    private prisma: PrismaService,
   ) {
     this.setupBot();
+  }
+
+  private dbSession() {
+    const prisma = this.prisma;
+    return async (ctx: any, next: () => Promise<void>) => {
+      const key = ctx.from?.id ? String(ctx.from.id) : null;
+      if (!key) {
+        ctx.session = {};
+        return next();
+      }
+      const stored = await prisma.telegramSession.findUnique({ where: { key } });
+      ctx.session = stored ? JSON.parse(stored.data) : {};
+      await next();
+      await prisma.telegramSession.upsert({
+        where: { key },
+        create: { key, data: JSON.stringify(ctx.session) },
+        update: { data: JSON.stringify(ctx.session) },
+      });
+    };
   }
 
   private setupBot() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN')!;
     this.bot = new Telegraf<BotContext>(token as any);
     const stage = new Scenes.Stage<any>([this.createWizardScene()]);
-    this.bot.use(session() as any);
+    this.bot.use(this.dbSession() as any);
     this.bot.use(stage.middleware() as any);
     this.setupCommands();
   }
