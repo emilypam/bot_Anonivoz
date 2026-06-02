@@ -95,7 +95,7 @@ export class BotService {
 
       // Paso 0: Rol
       (ctx) => ctx.reply(
-        '¿Eres la persona afectada o estás reportando algo que viste?\n\n_Selecciona una opción:_',
+        '*Paso 1 de 11*\n\n¿Eres la persona afectada o estás reportando algo que viste?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -108,7 +108,7 @@ export class BotService {
 
       // Paso 1: Tipo de acoso
       (ctx) => ctx.reply(
-        '¿Qué tipo de acoso describe mejor la situación?\n\n_Selecciona una opción:_',
+        '*Paso 2 de 11*\n\n¿Qué tipo de acoso describe mejor la situación?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -121,7 +121,7 @@ export class BotService {
 
       // Paso 2: Frecuencia
       (ctx) => ctx.reply(
-        '¿Con qué frecuencia ha ocurrido esto?\n\n_Selecciona una opción:_',
+        '*Paso 3 de 11*\n\n¿Con qué frecuencia ha ocurrido esto?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -134,7 +134,7 @@ export class BotService {
 
       // Paso 3: Lugar
       (ctx) => ctx.reply(
-        '¿Dónde ha ocurrido principalmente?\n\n_Selecciona una opción:_',
+        '*Paso 4 de 11*\n\n¿Dónde ha ocurrido principalmente?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -147,7 +147,7 @@ export class BotService {
 
       // Paso 4: Fecha
       (ctx) => ctx.reply(
-        '¿Cuándo ocurrió el incidente más reciente?\n\n_Selecciona una opción:_',
+        '*Paso 5 de 11*\n\n¿Cuándo ocurrió el incidente más reciente?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -166,7 +166,7 @@ export class BotService {
 
       // Paso 5: Datos del agresor (TEXTO — necesario)
       (ctx) => ctx.reply(
-        '*¿Quién cometió el acoso?*\n\nEscribe el nombre, curso, apodo o cualquier dato que recuerdes de esa persona.',
+        '*Paso 6 de 11*\n\n¿Quién cometió el acoso?\n\nEscribe el nombre, curso, apodo o cualquier dato que recuerdes de esa persona.',
         { parse_mode: 'Markdown' },
       ),
 
@@ -174,7 +174,7 @@ export class BotService {
       (ctx) => {
         ctx.session.waitingForWitnessNames = false;
         return ctx.reply(
-          '¿Hubo personas que presenciaron el incidente?\n\n_Selecciona una opción:_',
+          '*Paso 7 de 11*\n\n¿Hubo personas que presenciaron el incidente?\n\n_Selecciona una opción:_',
           {
             parse_mode: 'Markdown',
             reply_markup: {
@@ -189,7 +189,7 @@ export class BotService {
 
       // Paso 7: ¿Ya fue reportado?
       (ctx) => ctx.reply(
-        '¿Esta situación ya fue reportada antes a alguna autoridad?\n\n_Selecciona una opción:_',
+        '*Paso 8 de 11*\n\n¿Esta situación ya fue reportada antes a alguna autoridad?\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -203,7 +203,7 @@ export class BotService {
 
       // Paso 8: ¿Quiere contacto?
       (ctx) => ctx.reply(
-        '¿Deseas que una autoridad escolar se contacte contigo para dar seguimiento?\n\nTu identidad estará protegida en todo momento.\n\n_Selecciona una opción:_',
+        '*Paso 9 de 11*\n\n¿Deseas que una autoridad escolar se contacte contigo para dar seguimiento?\n\nTu identidad estará protegida en todo momento.\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -219,7 +219,7 @@ export class BotService {
       (ctx) => {
         ctx.session.waitingForEvidenceUrl = false;
         return ctx.reply(
-          '¿Cuentas con alguna evidencia del incidente (fotos, capturas, mensajes)?\n\n_Selecciona una opción:_',
+          '*Paso 10 de 11*\n\n¿Cuentas con alguna evidencia del incidente (fotos, capturas, mensajes)?\n\n_Selecciona una opción:_',
           {
             parse_mode: 'Markdown',
             reply_markup: {
@@ -234,7 +234,7 @@ export class BotService {
 
       // Paso 10: Descripción libre (TEXTO — necesario)
       (ctx) => ctx.reply(
-        '*Ultimo paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
+        '*Paso 11 de 11 — Ultimo paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
         { parse_mode: 'Markdown' },
       ),
     );
@@ -369,6 +369,16 @@ export class BotService {
       await ctx.reply('Reporte cancelado. Usa /report para comenzar de nuevo.');
     });
 
+    wizard.command('help', async (ctx) => {
+      await ctx.reply(
+        '*Ayuda — AnoniVoz*\n\n' +
+          'Estás en medio de un reporte. Sigue los pasos respondiendo con los botones o escribiendo cuando se te pida.\n\n' +
+          '/cancel — Cancelar el reporte actual\n' +
+          '/help — Mostrar esta ayuda',
+        { parse_mode: 'Markdown' },
+      );
+    });
+
     // Manejo de texto
 
     wizard.on('text', async (ctx, next) => {
@@ -452,7 +462,8 @@ export class BotService {
         `*Reporte registrado exitosamente*\n\n` +
           `Número de caso: \`${report.reportNumber}\`\n\n` +
           `Gracias por tu valentía. Tu reporte será revisado de forma *confidencial* por las autoridades correspondientes.\n\n` +
-          `Guarda tu número de caso para cualquier seguimiento futuro.`,
+          `Guarda tu número de caso para cualquier seguimiento futuro.\n\n` +
+          `Si necesitas registrar otro incidente, usa /report.`,
         { parse_mode: 'Markdown', reply_markup: { remove_keyboard: true } },
       );
 
