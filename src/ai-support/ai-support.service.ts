@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
 const SYSTEM_PROMPT = `Eres un asistente de apoyo emocional dentro de AnoniVoz, un sistema confidencial de reporte de acoso escolar para instituciones Fe y Alegría en Ecuador. Tu rol es escuchar, acompañar y validar las emociones de estudiantes que han vivido o presenciado situaciones de acoso.
 
@@ -21,38 +21,35 @@ export interface ChatMessage {
 
 @Injectable()
 export class AiSupportService {
-  private genAI: GoogleGenerativeAI;
+  private groq: Groq;
   private logger = new Logger(AiSupportService.name);
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY')!;
-    this.genAI = new GoogleGenerativeAI(apiKey);
+    const apiKey = this.configService.get<string>('GROQ_API_KEY')!;
+    this.groq = new Groq({ apiKey });
   }
 
   async chat(history: ChatMessage[], userMessage: string): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel(
-        { model: 'gemini-1.5-flash' },
-        { apiVersion: 'v1' },
-      );
-
-      const systemHistory: ChatMessage[] = [
-        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-        { role: 'model', parts: [{ text: 'Entendido. Estoy aquí para escucharte y acompañarte.' }] },
+      const messages: Groq.Chat.ChatCompletionMessageParam[] = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...history.map((m) => ({
+          role: (m.role === 'model' ? 'assistant' : 'user') as 'user' | 'assistant',
+          content: m.parts[0].text,
+        })),
+        { role: 'user', content: userMessage },
       ];
 
-      const chat = model.startChat({
-        history: [...systemHistory, ...history],
-        generationConfig: {
-          maxOutputTokens: 300,
-          temperature: 0.7,
-        },
+      const completion = await this.groq.chat.completions.create({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages,
+        max_tokens: 300,
+        temperature: 0.7,
       });
 
-      const result = await chat.sendMessage(userMessage);
-      return result.response.text();
+      return completion.choices[0]?.message?.content ?? 'No pude generar una respuesta.';
     } catch (error) {
-      this.logger.error('Gemini API error:', error);
+      this.logger.error('Groq API error:', error);
       return 'En este momento no puedo responder. Por favor habla con el DECE o un adulto de confianza en tu institución.';
     }
   }
