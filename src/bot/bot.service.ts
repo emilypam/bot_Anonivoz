@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Context, Scenes, Telegraf } from 'telegraf';
 import { ReportService } from '../report/report.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiSupportService, ChatMessage } from '../ai-support/ai-support.service';
 
 const HARASSMENT_TYPES = ['Físico', 'Verbal', 'Social/Exclusión', 'Ciberacoso'];
 const FREQUENCY_LEVELS = ['Una sola vez', 'Semanalmente', 'Diariamente'];
@@ -31,6 +32,7 @@ interface BotSession extends Scenes.WizardSessionData {
   evidenceUrl?: string;
   waitingForEvidenceUrl?: boolean;
   descriptionText?: string;
+  chatHistory?: ChatMessage[];
 }
 
 // Definición manual del contexto para que ctx.session esté tipado
@@ -57,6 +59,7 @@ export class BotService {
     private configService: ConfigService,
     private reportService: ReportService,
     private prisma: PrismaService,
+    private aiSupport: AiSupportService,
   ) {
     this.setupBot();
   }
@@ -83,7 +86,7 @@ export class BotService {
   private setupBot() {
     const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN')!;
     this.bot = new Telegraf<BotContext>(token as any);
-    const stage = new Scenes.Stage<any>([this.createWizardScene()]);
+    const stage = new Scenes.Stage<any>([this.createWizardScene(), this.createSupportScene()]);
     this.bot.use(this.dbSession() as any);
     this.bot.use(stage.middleware() as any);
     this.setupCommands();
@@ -475,6 +478,51 @@ export class BotService {
     }
   }
 
+  private createSupportScene() {
+    const scene = new Scenes.BaseScene<any>('support_scene');
+
+    scene.enter(async (ctx) => {
+      ctx.session.chatHistory = [];
+      await ctx.reply(
+        'Estoy aqui para escucharte. Cuentame como te sientes o que esta pasando.\n\nEscribe /salir cuando quieras terminar.',
+      );
+    });
+
+    scene.command('salir', async (ctx) => {
+      ctx.session.chatHistory = [];
+      await ctx.scene.leave();
+      await ctx.reply(
+        'Gracias por compartir conmigo. Recuerda que el DECE y los adultos de confianza en tu institución siempre están disponibles para ayudarte.\n\nUsa /apoyo si necesitas hablar de nuevo.',
+      );
+    });
+
+    scene.command('cancel', async (ctx) => {
+      ctx.session.chatHistory = [];
+      await ctx.scene.leave();
+      await ctx.reply('Has salido del modo de apoyo. Usa /apoyo para volver cuando lo necesites.');
+    });
+
+    scene.on('text', async (ctx) => {
+      const userMessage = (ctx.message as any).text as string;
+
+      if (userMessage.startsWith('/')) return;
+
+      const history: ChatMessage[] = ctx.session.chatHistory ?? [];
+
+      const response = await this.aiSupport.chat(history, userMessage);
+
+      ctx.session.chatHistory = [
+        ...history,
+        { role: 'user', parts: [{ text: userMessage }] },
+        { role: 'model', parts: [{ text: response }] },
+      ].slice(-20);
+
+      await ctx.reply(response);
+    });
+
+    return scene;
+  }
+
   private setupCommands() {
     this.bot.command('start', async (ctx) => {
       const text = ctx.message && 'text' in ctx.message ? ctx.message.text : '';
@@ -501,6 +549,7 @@ export class BotService {
             'Este es un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
             'Tu identidad está protegida en todo momento.\n' +
             'Usa /report para registrar un incidente.\n' +
+            'Usa /apoyo si necesitas hablar con alguien.\n' +
             'Usa /help para más información.',
           { parse_mode: 'Markdown' },
         );
@@ -533,12 +582,17 @@ export class BotService {
         '*Ayuda — AnoniVoz*\n\n' +
           '/start — Mensaje de bienvenida\n' +
           '/report — Registrar un nuevo reporte\n' +
+          '/apoyo — Hablar con un asistente de apoyo emocional\n' +
           '/cancel — Cancelar el reporte en curso\n' +
           '/help — Mostrar esta ayuda\n\n' +
           'En casi todos los pasos solo debes presionar un botón. Solo te pedirá escribir cuando sea estrictamente necesario.',
         { parse_mode: 'Markdown' },
       ),
     );
+
+    this.bot.command('apoyo', async (ctx) => {
+      await ctx.scene.enter('support_scene');
+    });
 
     this.bot.command('cancel', (ctx) =>
       ctx.reply(
