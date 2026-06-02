@@ -32,12 +32,17 @@ export class AiSupportService {
   async chat(history: ChatMessage[], userMessage: string): Promise<string> {
     try {
       const model = this.genAI.getGenerativeModel(
-        { model: 'gemini-1.5-flash', systemInstruction: SYSTEM_PROMPT },
+        { model: 'gemini-1.5-flash' },
         { apiVersion: 'v1' },
       );
 
+      const systemHistory: ChatMessage[] = [
+        { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
+        { role: 'model', parts: [{ text: 'Entendido. Estoy aquí para escucharte y acompañarte.' }] },
+      ];
+
       const chat = model.startChat({
-        history,
+        history: [...systemHistory, ...history],
         generationConfig: {
           maxOutputTokens: 300,
           temperature: 0.7,
