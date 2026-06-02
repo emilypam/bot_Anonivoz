@@ -10,11 +10,18 @@ const FREQUENCY_LEVELS = ['Una sola vez', 'Semanalmente', 'Diariamente'];
 const LOCATIONS = ['Salón de clases', 'Recreo/Patios', 'Redes Sociales', 'Fuera de la escuela'];
 const INFORMANT_TYPES = ['Víctima', 'Testigo'];
 
-// Pasos:
-// 0→Rol  1→Tipo acoso  2→Frecuencia  3→Lugar  4→Fecha
-// 5→Agresor(texto)  6→Testigos  7→Reportado?  8→Contacto?
-// 9→Evidencia  10→Descripción(texto)
 const BUTTON_ONLY_STEPS = [0, 1, 2, 3, 4, 7, 8];
+
+const MAIN_MENU_KB = {
+  inline_keyboard: [
+    [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
+    [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
+  ],
+};
+
+const CANCEL_KB = {
+  inline_keyboard: [[{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }]],
+};
 
 interface BotSession extends Scenes.WizardSessionData {
   institutionId?: string;
@@ -35,8 +42,6 @@ interface BotSession extends Scenes.WizardSessionData {
   chatHistory?: ChatMessage[];
 }
 
-// Definición manual del contexto para que ctx.session esté tipado
-// directamente como BotSession (sin el envoltorio WizardSession<>)
 interface BotContext extends Context {
   session: BotSession;
   scene: {
@@ -102,9 +107,10 @@ export class BotService {
         {
           parse_mode: 'Markdown',
           reply_markup: {
-            inline_keyboard: INFORMANT_TYPES.map((t) => [
-              { text: t, callback_data: `role_${t}` },
-            ]),
+            inline_keyboard: [
+              ...INFORMANT_TYPES.map((t) => [{ text: t, callback_data: `role_${t}` }]),
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
+            ],
           },
         },
       ),
@@ -115,9 +121,10 @@ export class BotService {
         {
           parse_mode: 'Markdown',
           reply_markup: {
-            inline_keyboard: HARASSMENT_TYPES.map((t) => [
-              { text: t, callback_data: `type_${t}` },
-            ]),
+            inline_keyboard: [
+              ...HARASSMENT_TYPES.map((t) => [{ text: t, callback_data: `type_${t}` }]),
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
+            ],
           },
         },
       ),
@@ -128,9 +135,10 @@ export class BotService {
         {
           parse_mode: 'Markdown',
           reply_markup: {
-            inline_keyboard: FREQUENCY_LEVELS.map((f) => [
-              { text: f, callback_data: `freq_${f}` },
-            ]),
+            inline_keyboard: [
+              ...FREQUENCY_LEVELS.map((f) => [{ text: f, callback_data: `freq_${f}` }]),
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
+            ],
           },
         },
       ),
@@ -141,9 +149,10 @@ export class BotService {
         {
           parse_mode: 'Markdown',
           reply_markup: {
-            inline_keyboard: LOCATIONS.map((l) => [
-              { text: l, callback_data: `loc_${l}` },
-            ]),
+            inline_keyboard: [
+              ...LOCATIONS.map((l) => [{ text: l, callback_data: `loc_${l}` }]),
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
+            ],
           },
         },
       ),
@@ -162,15 +171,16 @@ export class BotService {
               [{ text: 'Esta semana', callback_data: 'date_Esta semana' }],
               [{ text: 'La semana pasada', callback_data: 'date_La semana pasada' }],
               [{ text: 'Hace más de un mes', callback_data: 'date_Hace más de un mes' }],
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
             ],
           },
         },
       ),
 
-      // Paso 5: Datos del agresor (TEXTO — necesario)
+      // Paso 5: Datos del agresor (texto)
       (ctx) => ctx.reply(
         '*Paso 6 de 11*\n\n¿Quién cometió el acoso?\n\nEscribe el nombre, curso, apodo o cualquier dato que recuerdes de esa persona.',
-        { parse_mode: 'Markdown' },
+        { parse_mode: 'Markdown', reply_markup: CANCEL_KB },
       ),
 
       // Paso 6: Testigos
@@ -182,8 +192,9 @@ export class BotService {
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [
-                [{ text: 'Si, hubo testigos', callback_data: 'witness_yes' }],
+                [{ text: 'Sí, hubo testigos', callback_data: 'witness_yes' }],
                 [{ text: 'No hubo testigos', callback_data: 'witness_no' }],
+                [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
               ],
             },
           },
@@ -197,8 +208,9 @@ export class BotService {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: 'Si, ya fue reportada antes', callback_data: 'prev_yes' }],
+              [{ text: 'Sí, ya fue reportada antes', callback_data: 'prev_yes' }],
               [{ text: 'No, es la primera vez', callback_data: 'prev_no' }],
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
             ],
           },
         },
@@ -211,8 +223,9 @@ export class BotService {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: 'Si, quiero seguimiento', callback_data: 'contact_yes' }],
+              [{ text: 'Sí, quiero seguimiento', callback_data: 'contact_yes' }],
               [{ text: 'No, prefiero el anonimato', callback_data: 'contact_no' }],
+              [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
             ],
           },
         },
@@ -227,34 +240,38 @@ export class BotService {
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [
-                [{ text: 'Si, tengo un enlace (URL)', callback_data: 'evidence_yes' }],
+                [{ text: 'Sí, tengo un enlace (URL)', callback_data: 'evidence_yes' }],
                 [{ text: 'No tengo evidencia', callback_data: 'evidence_no' }],
+                [{ text: '❌ Cancelar reporte', callback_data: 'wizard_cancel' }],
               ],
             },
           },
         );
       },
 
-      // Paso 10: Descripción libre (TEXTO — necesario)
+      // Paso 10: Descripción libre (texto)
       (ctx) => ctx.reply(
-        '*Paso 11 de 11 — Ultimo paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
-        { parse_mode: 'Markdown' },
+        '*Paso 11 de 11 — Último paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
+        { parse_mode: 'Markdown', reply_markup: CANCEL_KB },
       ),
     );
 
-    // Acciones de botones
-    // Patrón Telegraf v4: ctx.wizard.next() + return next()
-    // next() permite que handleStep corra con el cursor actualizado
-    // y así muestra el siguiente paso inmediatamente.
-
-    // Guard reutilizable: rechaza clics en teclados de pasos anteriores (stale keyboards)
     const guardStep = async (ctx: any, expectedStep: number): Promise<boolean> => {
       if (ctx.wizard.cursor !== expectedStep) {
-        await ctx.answerCbQuery('Este boton ya no es valido.');
+        await ctx.answerCbQuery('Este botón ya no es válido.');
         return false;
       }
       return true;
     };
+
+    wizard.action('wizard_cancel', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.scene.leave();
+      await ctx.reply(
+        'Reporte cancelado. ¿Qué deseas hacer?',
+        { reply_markup: MAIN_MENU_KB },
+      );
+    });
 
     wizard.action(/^role_/, async (ctx, next) => {
       if (!('data' in ctx.callbackQuery)) return;
@@ -315,7 +332,10 @@ export class BotService {
       if (!await guardStep(ctx, 6)) return;
       ctx.session.waitingForWitnessNames = true;
       await ctx.answerCbQuery();
-      await ctx.reply('Escribe los nombres, cursos o una descripción de quienes lo presenciaron:');
+      await ctx.reply(
+        'Escribe los nombres, cursos o una descripción de quienes lo presenciaron:',
+        { reply_markup: CANCEL_KB },
+      );
     });
 
     wizard.action('witness_no', async (ctx, next) => {
@@ -353,7 +373,10 @@ export class BotService {
       if (!await guardStep(ctx, 9)) return;
       ctx.session.waitingForEvidenceUrl = true;
       await ctx.answerCbQuery();
-      await ctx.reply('Escribe el enlace (URL) de la evidencia. Debe comenzar con http:// o https://');
+      await ctx.reply(
+        'Escribe el enlace (URL) de la evidencia. Debe comenzar con http:// o https://',
+        { reply_markup: CANCEL_KB },
+      );
     });
 
     wizard.action('evidence_no', async (ctx, next) => {
@@ -365,11 +388,9 @@ export class BotService {
       return next();
     });
 
-    // Comandos dentro del wizard
-
     wizard.command('cancel', async (ctx) => {
       await ctx.scene.leave();
-      await ctx.reply('Reporte cancelado. Usa /report para comenzar de nuevo.');
+      await ctx.reply('Reporte cancelado. ¿Qué deseas hacer?', { reply_markup: MAIN_MENU_KB });
     });
 
     wizard.command('start', async (ctx) => {
@@ -379,52 +400,37 @@ export class BotService {
           ? `*AnoniVoz — ${ctx.session.institutionName}*\n\nReporte cancelado. ¿Qué deseas hacer?`
           : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
         ctx.session.institutionName
-          ? {
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
-                  [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
-                ],
-              },
-            }
+          ? { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB }
           : { parse_mode: 'Markdown' },
       );
     });
 
     wizard.command('help', async (ctx) => {
       await ctx.reply(
-        '*Ayuda — AnoniVoz*\n\n' +
-          'Estás en medio de un reporte. Sigue los pasos respondiendo con los botones o escribiendo cuando se te pida.\n\n' +
-          '/cancel — Cancelar el reporte actual\n' +
-          '/help — Mostrar esta ayuda',
-        { parse_mode: 'Markdown' },
+        '*Ayuda — AnoniVoz*\n\nEstás registrando un reporte. Sigue los pasos con los botones o escribe cuando se te pida.',
+        { parse_mode: 'Markdown', reply_markup: CANCEL_KB },
       );
     });
 
-    // Manejo de texto
-
     wizard.on('text', async (ctx, next) => {
-      // Comandos dentro de la escena: pasar al paso actual para que
-      // re-envíe la pregunta con botones (/cancel lo maneja wizard.command arriba)
       if (ctx.message.text.startsWith('/')) return next();
 
       const step = ctx.wizard.cursor;
 
-      // Pasos que solo aceptan botones — rechazar texto libre
       if (BUTTON_ONLY_STEPS.includes(step)) {
-        await ctx.reply('Por favor, usa los botones para responder. Si no los ves, escribe /cancel para salir.');
+        await ctx.reply(
+          'Por favor, usa los botones para responder.',
+          { reply_markup: CANCEL_KB },
+        );
         return;
       }
 
-      // Paso 5: Datos del agresor
       if (step === 5) {
         ctx.session.aggressorInfo = ctx.message.text;
         ctx.wizard.next();
         return next();
       }
 
-      // Paso 6: Nombres de testigos (solo si se activó el flag)
       if (step === 6) {
         if (ctx.session.waitingForWitnessNames) {
           ctx.session.witnessInfo = ctx.message.text;
@@ -432,16 +438,18 @@ export class BotService {
           ctx.wizard.next();
           return next();
         }
-        await ctx.reply('Por favor, usa los botones de arriba para responder esta pregunta.');
+        await ctx.reply('Por favor, usa los botones para responder.', { reply_markup: CANCEL_KB });
         return;
       }
 
-      // Paso 9: URL de evidencia (solo si se activó el flag)
       if (step === 9) {
         if (ctx.session.waitingForEvidenceUrl) {
           const url = ctx.message.text.trim();
           if (!url.startsWith('http')) {
-            await ctx.reply('El enlace no es valido. Debe comenzar con http:// o https://\n\nInténtalo de nuevo:');
+            await ctx.reply(
+              'El enlace no es válido. Debe comenzar con http:// o https://\n\nInténtalo de nuevo:',
+              { reply_markup: CANCEL_KB },
+            );
             return;
           }
           ctx.session.evidenceUrl = url;
@@ -449,11 +457,10 @@ export class BotService {
           ctx.wizard.next();
           return next();
         }
-        await ctx.reply('Por favor, usa los botones de arriba para responder esta pregunta.');
+        await ctx.reply('Por favor, usa los botones para responder.', { reply_markup: CANCEL_KB });
         return;
       }
 
-      // Paso 10: Descripción final — guarda el reporte
       if (step === 10) {
         ctx.session.descriptionText = ctx.message.text;
         await this.saveReport(ctx);
@@ -493,10 +500,10 @@ export class BotService {
         '¿Cómo te sientes después de reportar esto?',
         {
           reply_markup: {
-            inline_keyboard: [[
-              { text: 'Quiero hablar con alguien', callback_data: 'post_report_apoyo' },
-              { text: 'Estoy bien, gracias', callback_data: 'post_report_ok' },
-            ]],
+            inline_keyboard: [
+              [{ text: '💬 Quiero hablar con alguien', callback_data: 'post_report_apoyo' }],
+              [{ text: '✅ Estoy bien, gracias', callback_data: 'post_report_ok' }],
+            ],
           },
         },
       );
@@ -505,7 +512,17 @@ export class BotService {
     } catch (error) {
       this.logger.error('Error saving report:', error);
       await ctx.scene.leave();
-      await ctx.reply('Ocurrio un error al guardar el reporte. Escribe /report para intentar de nuevo.');
+      await ctx.reply(
+        'Ocurrió un error al guardar el reporte. ¿Qué deseas hacer?',
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '🔄 Intentar de nuevo', callback_data: 'main_report' }],
+              [{ text: '💬 Hablar con alguien', callback_data: 'main_apoyo' }],
+            ],
+          },
+        },
+      );
     }
   }
 
@@ -521,9 +538,23 @@ export class BotService {
           '• Darte orientación si viviste o presenciaste acoso\n' +
           '• Aconsejarte sobre qué pasos puedes seguir\n\n' +
           'Todo lo que me cuentes es confidencial. No soy un psicólogo, pero sí un primer espacio seguro para desahogarte.\n\n' +
-          'Cuéntame, ¿cómo estás? ¿Qué está pasando?\n\n' +
-          '_Escribe_ /salir _cuando quieras terminar._',
-        { parse_mode: 'Markdown' },
+          'Cuéntame, ¿cómo estás? ¿Qué está pasando?',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [[{ text: '🚪 Terminar conversación', callback_data: 'support_salir' }]],
+          },
+        },
+      );
+    });
+
+    scene.action('support_salir', async (ctx) => {
+      await ctx.answerCbQuery();
+      ctx.session.chatHistory = [];
+      await ctx.scene.leave();
+      await ctx.reply(
+        'Gracias por compartir conmigo. Recuerda que el DECE y los adultos de confianza en tu institución siempre están disponibles para ayudarte.',
+        { reply_markup: MAIN_MENU_KB },
       );
     });
 
@@ -531,14 +562,15 @@ export class BotService {
       ctx.session.chatHistory = [];
       await ctx.scene.leave();
       await ctx.reply(
-        'Gracias por compartir conmigo. Recuerda que el DECE y los adultos de confianza en tu institución siempre están disponibles para ayudarte.\n\nUsa /apoyo si necesitas hablar de nuevo.',
+        'Gracias por compartir conmigo. Recuerda que el DECE y los adultos de confianza en tu institución siempre están disponibles para ayudarte.',
+        { reply_markup: MAIN_MENU_KB },
       );
     });
 
     scene.command('cancel', async (ctx) => {
       ctx.session.chatHistory = [];
       await ctx.scene.leave();
-      await ctx.reply('Has salido del modo de apoyo. Usa /apoyo para volver cuando lo necesites.');
+      await ctx.reply('Has salido del modo de apoyo. ¿Qué deseas hacer?', { reply_markup: MAIN_MENU_KB });
     });
 
     scene.command('start', async (ctx) => {
@@ -549,15 +581,7 @@ export class BotService {
           ? `*Bienvenido de nuevo a AnoniVoz*\n\nInstitución: *${ctx.session.institutionName}*\n\n¿Qué deseas hacer?`
           : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
         ctx.session.institutionName
-          ? {
-              parse_mode: 'Markdown',
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
-                  [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
-                ],
-              },
-            }
+          ? { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB }
           : { parse_mode: 'Markdown' },
       );
     });
@@ -577,7 +601,11 @@ export class BotService {
         { role: 'model', parts: [{ text: response }] },
       ].slice(-20);
 
-      await ctx.reply(response);
+      await ctx.reply(response, {
+        reply_markup: {
+          inline_keyboard: [[{ text: '🚪 Terminar conversación', callback_data: 'support_salir' }]],
+        },
+      });
     });
 
     return scene;
@@ -595,8 +623,7 @@ export class BotService {
 
         if (!institution || !institution.active) {
           return ctx.reply(
-            'El enlace de acceso no es válido o la institución no está activa.\n\n' +
-              'Solicita el QR o enlace correcto a tu institución educativa.',
+            'El enlace de acceso no es válido o la institución no está activa.\n\nSolicita el QR o enlace correcto a tu institución educativa.',
           );
         }
 
@@ -608,15 +635,7 @@ export class BotService {
             `Institución: *${institution.name}*\n\n` +
             'Este es un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
             'Tu identidad está protegida en todo momento. ¿Qué deseas hacer?',
-          {
-            parse_mode: 'Markdown',
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
-                [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
-              ],
-            },
-          },
+          { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB },
         );
       }
 
@@ -631,27 +650,19 @@ export class BotService {
     this.bot.command('report', async (ctx) => {
       if (!ctx.session.institutionId) {
         return ctx.reply(
-          'Para registrar un reporte debes acceder primero a través del enlace de tu institución.\n\n' +
-            'Solicita el QR o enlace a las autoridades de tu colegio.',
+          'Para registrar un reporte debes acceder primero a través del enlace de tu institución.\n\nSolicita el QR o enlace a las autoridades de tu colegio.',
         );
       }
-      await ctx.reply(
-        'Vamos a registrar tu reporte paso a paso.\n\n' +
-          'En la mayoría de pasos solo debes presionar un botón. Solo en algunos momentos necesitarás escribir texto.',
-      );
+      await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
       return ctx.scene.enter('report_wizard');
     });
 
     this.bot.command('help', (ctx) =>
       ctx.reply(
         '*Ayuda — AnoniVoz*\n\n' +
-          '/start — Mensaje de bienvenida\n' +
-          '/report — Registrar un nuevo reporte\n' +
-          '/apoyo — Hablar con un asistente de apoyo emocional\n' +
-          '/cancel — Cancelar el reporte en curso\n' +
-          '/help — Mostrar esta ayuda\n\n' +
-          'En casi todos los pasos solo debes presionar un botón. Solo te pedirá escribir cuando sea estrictamente necesario.',
-        { parse_mode: 'Markdown' },
+          'Sistema confidencial de reporte de acoso escolar.\n\n' +
+          '¿Qué deseas hacer?',
+        { parse_mode: 'Markdown', reply_markup: MAIN_MENU_KB },
       ),
     );
 
@@ -659,10 +670,8 @@ export class BotService {
       await ctx.scene.enter('support_scene');
     });
 
-    this.bot.command('cancel', (ctx) =>
-      ctx.reply(
-        'No hay ningún reporte en curso.\n\nUsa /report para comenzar uno nuevo.',
-      ),
+    this.bot.command('cancel', async (ctx) =>
+      ctx.reply('No hay ningún reporte en curso. ¿Qué deseas hacer?', { reply_markup: MAIN_MENU_KB }),
     );
 
     this.bot.action('main_report', async (ctx) => {
@@ -686,11 +695,17 @@ export class BotService {
 
     this.bot.action('post_report_ok', async (ctx) => {
       await ctx.answerCbQuery();
-      await ctx.reply('Me alegra saberlo. Recuerda que puedes usar /apoyo cuando lo necesites.');
+      await ctx.reply(
+        'Me alegra saberlo. Aquí estaremos si necesitas algo más.',
+        { reply_markup: MAIN_MENU_KB },
+      );
     });
 
     this.bot.on('message', (ctx) =>
-      ctx.reply('No reconozco ese comando. Usa /help para ver las opciones disponibles.'),
+      ctx.reply(
+        'No reconozco ese mensaje. ¿Qué deseas hacer?',
+        { reply_markup: MAIN_MENU_KB },
+      ),
     );
   }
 
