@@ -376,9 +376,19 @@ export class BotService {
       await ctx.scene.leave();
       await ctx.reply(
         ctx.session.institutionName
-          ? `*AnoniVoz — ${ctx.session.institutionName}*\n\nUsa /report para registrar un incidente o /apoyo para hablar con alguien.`
+          ? `*AnoniVoz — ${ctx.session.institutionName}*\n\nReporte cancelado. ¿Qué deseas hacer?`
           : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
-        { parse_mode: 'Markdown' },
+        ctx.session.institutionName
+          ? {
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
+                  [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
+                ],
+              },
+            }
+          : { parse_mode: 'Markdown' },
       );
     });
 
@@ -536,9 +546,19 @@ export class BotService {
       await ctx.scene.leave();
       await ctx.reply(
         ctx.session.institutionName
-          ? `*Bienvenido de nuevo a AnoniVoz*\n\nInstitución: *${ctx.session.institutionName}*\n\nUsa /report para registrar un incidente o /apoyo para hablar con alguien.`
+          ? `*Bienvenido de nuevo a AnoniVoz*\n\nInstitución: *${ctx.session.institutionName}*\n\n¿Qué deseas hacer?`
           : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
-        { parse_mode: 'Markdown' },
+        ctx.session.institutionName
+          ? {
+              parse_mode: 'Markdown',
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
+                  [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
+                ],
+              },
+            }
+          : { parse_mode: 'Markdown' },
       );
     });
 
@@ -587,11 +607,16 @@ export class BotService {
           `*Bienvenido a AnoniVoz*\n\n` +
             `Institución: *${institution.name}*\n\n` +
             'Este es un sistema seguro y confidencial para reportar situaciones de acoso escolar.\n\n' +
-            'Tu identidad está protegida en todo momento.\n' +
-            'Usa /report para registrar un incidente.\n' +
-            'Usa /apoyo si necesitas hablar con alguien.\n' +
-            'Usa /help para más información.',
-          { parse_mode: 'Markdown' },
+            'Tu identidad está protegida en todo momento. ¿Qué deseas hacer?',
+          {
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
+                [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
+              ],
+            },
+          },
         );
       }
 
@@ -639,6 +664,20 @@ export class BotService {
         'No hay ningún reporte en curso.\n\nUsa /report para comenzar uno nuevo.',
       ),
     );
+
+    this.bot.action('main_report', async (ctx) => {
+      await ctx.answerCbQuery();
+      if (!ctx.session.institutionId) {
+        return ctx.reply('Para registrar un reporte accede a través del enlace o código QR de tu institución.');
+      }
+      await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
+      return ctx.scene.enter('report_wizard');
+    });
+
+    this.bot.action('main_apoyo', async (ctx) => {
+      await ctx.answerCbQuery();
+      return ctx.scene.enter('support_scene');
+    });
 
     this.bot.action('post_report_apoyo', async (ctx) => {
       await ctx.answerCbQuery();
