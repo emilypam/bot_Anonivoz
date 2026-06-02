@@ -166,7 +166,7 @@ export class BotService {
 
       // Paso 5: Datos del agresor (TEXTO — necesario)
       (ctx) => ctx.reply(
-        '📝 *¿Quién cometió el acoso?*\n\nEscribe el nombre, curso, apodo o cualquier dato que recuerdes de esa persona.',
+        '*¿Quién cometió el acoso?*\n\nEscribe el nombre, curso, apodo o cualquier dato que recuerdes de esa persona.',
         { parse_mode: 'Markdown' },
       ),
 
@@ -179,8 +179,8 @@ export class BotService {
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [
-                [{ text: '✅ Sí, hubo testigos', callback_data: 'witness_yes' }],
-                [{ text: '❌ No hubo testigos', callback_data: 'witness_no' }],
+                [{ text: 'Si, hubo testigos', callback_data: 'witness_yes' }],
+                [{ text: 'No hubo testigos', callback_data: 'witness_no' }],
               ],
             },
           },
@@ -194,8 +194,8 @@ export class BotService {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: '✅ Sí, ya fue reportada antes', callback_data: 'prev_yes' }],
-              [{ text: '❌ No, es la primera vez', callback_data: 'prev_no' }],
+              [{ text: 'Si, ya fue reportada antes', callback_data: 'prev_yes' }],
+              [{ text: 'No, es la primera vez', callback_data: 'prev_no' }],
             ],
           },
         },
@@ -203,13 +203,13 @@ export class BotService {
 
       // Paso 8: ¿Quiere contacto?
       (ctx) => ctx.reply(
-        '¿Deseas que una autoridad escolar se contacte contigo para dar seguimiento?\n\n🔒 Tu identidad estará protegida en todo momento.\n\n_Selecciona una opción:_',
+        '¿Deseas que una autoridad escolar se contacte contigo para dar seguimiento?\n\nTu identidad estará protegida en todo momento.\n\n_Selecciona una opción:_',
         {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: '✅ Sí, quiero seguimiento', callback_data: 'contact_yes' }],
-              [{ text: '🔒 No, prefiero el anonimato', callback_data: 'contact_no' }],
+              [{ text: 'Si, quiero seguimiento', callback_data: 'contact_yes' }],
+              [{ text: 'No, prefiero el anonimato', callback_data: 'contact_no' }],
             ],
           },
         },
@@ -224,8 +224,8 @@ export class BotService {
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [
-                [{ text: '📎 Sí, tengo un enlace (URL)', callback_data: 'evidence_yes' }],
-                [{ text: '❌ No tengo evidencia', callback_data: 'evidence_no' }],
+                [{ text: 'Si, tengo un enlace (URL)', callback_data: 'evidence_yes' }],
+                [{ text: 'No tengo evidencia', callback_data: 'evidence_no' }],
               ],
             },
           },
@@ -234,12 +234,12 @@ export class BotService {
 
       // Paso 10: Descripción libre (TEXTO — necesario)
       (ctx) => ctx.reply(
-        '📋 *Último paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
+        '*Ultimo paso*\n\nDescribe con tus palabras lo que ocurrió. Puedes incluir qué pasó, qué se dijo, cómo te sentiste y cualquier detalle adicional.',
         { parse_mode: 'Markdown' },
       ),
     );
 
-    // ── Acciones de botones ──────────────────────────────────────────────
+    // Acciones de botones
     // Patrón Telegraf v4: ctx.wizard.next() + return next()
     // next() permite que handleStep corra con el cursor actualizado
     // y así muestra el siguiente paso inmediatamente.
@@ -247,7 +247,7 @@ export class BotService {
     // Guard reutilizable: rechaza clics en teclados de pasos anteriores (stale keyboards)
     const guardStep = async (ctx: any, expectedStep: number): Promise<boolean> => {
       if (ctx.wizard.cursor !== expectedStep) {
-        await ctx.answerCbQuery('⚠️ Este botón ya no es válido.');
+        await ctx.answerCbQuery('Este boton ya no es valido.');
         return false;
       }
       return true;
@@ -259,7 +259,7 @@ export class BotService {
       const match = ctx.callbackQuery.data.match(/^role_(.+)$/);
       if (!match) return;
       ctx.session.informantType = match[1];
-      await ctx.answerCbQuery(`✔ ${match[1]}`);
+      await ctx.answerCbQuery(match[1]);
       ctx.wizard.next();
       return next();
     });
@@ -270,7 +270,7 @@ export class BotService {
       const match = ctx.callbackQuery.data.match(/^type_(.+)$/);
       if (!match) return;
       ctx.session.harassmentType = match[1];
-      await ctx.answerCbQuery(`✔ ${match[1]}`);
+      await ctx.answerCbQuery(match[1]);
       ctx.wizard.next();
       return next();
     });
@@ -281,7 +281,7 @@ export class BotService {
       const match = ctx.callbackQuery.data.match(/^freq_(.+)$/);
       if (!match) return;
       ctx.session.frequencyLevel = match[1];
-      await ctx.answerCbQuery(`✔ ${match[1]}`);
+      await ctx.answerCbQuery(match[1]);
       ctx.wizard.next();
       return next();
     });
@@ -292,7 +292,7 @@ export class BotService {
       const match = ctx.callbackQuery.data.match(/^loc_(.+)$/);
       if (!match) return;
       ctx.session.locationTag = match[1];
-      await ctx.answerCbQuery(`✔ ${match[1]}`);
+      await ctx.answerCbQuery(match[1]);
       ctx.wizard.next();
       return next();
     });
@@ -303,7 +303,7 @@ export class BotService {
       const match = ctx.callbackQuery.data.match(/^date_(.+)$/);
       if (!match) return;
       ctx.session.incidentDate = match[1];
-      await ctx.answerCbQuery(`✔ ${match[1]}`);
+      await ctx.answerCbQuery(match[1]);
       ctx.wizard.next();
       return next();
     });
@@ -312,7 +312,7 @@ export class BotService {
       if (!await guardStep(ctx, 6)) return;
       ctx.session.waitingForWitnessNames = true;
       await ctx.answerCbQuery();
-      await ctx.reply('✏️ Escribe los nombres, cursos o una descripción de quienes lo presenciaron:');
+      await ctx.reply('Escribe los nombres, cursos o una descripción de quienes lo presenciaron:');
     });
 
     wizard.action('witness_no', async (ctx, next) => {
@@ -350,7 +350,7 @@ export class BotService {
       if (!await guardStep(ctx, 9)) return;
       ctx.session.waitingForEvidenceUrl = true;
       await ctx.answerCbQuery();
-      await ctx.reply('✏️ Escribe el enlace (URL) de la evidencia. Debe comenzar con http:// o https://');
+      await ctx.reply('Escribe el enlace (URL) de la evidencia. Debe comenzar con http:// o https://');
     });
 
     wizard.action('evidence_no', async (ctx, next) => {
@@ -362,14 +362,14 @@ export class BotService {
       return next();
     });
 
-    // ── Comandos dentro del wizard ───────────────────────────────────────
+    // Comandos dentro del wizard
 
     wizard.command('cancel', async (ctx) => {
       await ctx.scene.leave();
       await ctx.reply('Reporte cancelado. Usa /report para comenzar de nuevo.');
     });
 
-    // ── Manejo de texto ──────────────────────────────────────────────────
+    // Manejo de texto
 
     wizard.on('text', async (ctx, next) => {
       // Comandos dentro de la escena: pasar al paso actual para que
@@ -380,7 +380,7 @@ export class BotService {
 
       // Pasos que solo aceptan botones — rechazar texto libre
       if (BUTTON_ONLY_STEPS.includes(step)) {
-        await ctx.reply('⚠️ Por favor, usa los botones para responder. Si no los ves, escribe /cancel para salir.');
+        await ctx.reply('Por favor, usa los botones para responder. Si no los ves, escribe /cancel para salir.');
         return;
       }
 
@@ -399,7 +399,7 @@ export class BotService {
           ctx.wizard.next();
           return next();
         }
-        await ctx.reply('⚠️ Por favor, usa los botones de arriba para responder esta pregunta.');
+        await ctx.reply('Por favor, usa los botones de arriba para responder esta pregunta.');
         return;
       }
 
@@ -408,7 +408,7 @@ export class BotService {
         if (ctx.session.waitingForEvidenceUrl) {
           const url = ctx.message.text.trim();
           if (!url.startsWith('http')) {
-            await ctx.reply('⚠️ El enlace no es válido. Debe comenzar con http:// o https://\n\nInténtalo de nuevo:');
+            await ctx.reply('El enlace no es valido. Debe comenzar con http:// o https://\n\nInténtalo de nuevo:');
             return;
           }
           ctx.session.evidenceUrl = url;
@@ -416,7 +416,7 @@ export class BotService {
           ctx.wizard.next();
           return next();
         }
-        await ctx.reply('⚠️ Por favor, usa los botones de arriba para responder esta pregunta.');
+        await ctx.reply('Por favor, usa los botones de arriba para responder esta pregunta.');
         return;
       }
 
@@ -449,8 +449,8 @@ export class BotService {
       });
 
       await ctx.reply(
-        `✅ *Reporte registrado exitosamente*\n\n` +
-          `🔖 Número de caso: \`${report.reportNumber}\`\n\n` +
+        `*Reporte registrado exitosamente*\n\n` +
+          `Número de caso: \`${report.reportNumber}\`\n\n` +
           `Gracias por tu valentía. Tu reporte será revisado de forma *confidencial* por las autoridades correspondientes.\n\n` +
           `Guarda tu número de caso para cualquier seguimiento futuro.`,
         { parse_mode: 'Markdown', reply_markup: { remove_keyboard: true } },
@@ -460,7 +460,7 @@ export class BotService {
     } catch (error) {
       this.logger.error('Error saving report:', error);
       await ctx.scene.leave();
-      await ctx.reply('❌ Ocurrió un error al guardar el reporte. Escribe /report para intentar de nuevo.');
+      await ctx.reply('Ocurrio un error al guardar el reporte. Escribe /report para intentar de nuevo.');
     }
   }
 
@@ -511,7 +511,7 @@ export class BotService {
         );
       }
       await ctx.reply(
-        '📋 Vamos a registrar tu reporte paso a paso.\n\n' +
+        'Vamos a registrar tu reporte paso a paso.\n\n' +
           'En la mayoría de pasos solo debes presionar un botón. Solo en algunos momentos necesitarás escribir texto.',
       );
       return ctx.scene.enter('report_wizard');
@@ -519,7 +519,7 @@ export class BotService {
 
     this.bot.command('help', (ctx) =>
       ctx.reply(
-        '❓ *Ayuda — AnonIvoz*\n\n' +
+        '*Ayuda — AnonIvoz*\n\n' +
           '/start — Mensaje de bienvenida\n' +
           '/report — Registrar un nuevo reporte\n' +
           '/help — Mostrar esta ayuda\n\n' +

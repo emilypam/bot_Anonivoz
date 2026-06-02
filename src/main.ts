@@ -19,7 +19,7 @@ async function bootstrap() {
   const port = parseInt(process.env.PORT || '3000', 10);
 
   await app.listen(port);
-  console.log(`✓ Application running on port ${port}`);
+  console.log(`Application running on port ${port}`);
 }
 
 bootstrap().catch(err => {

@@ -91,7 +91,7 @@ export class ReportService {
     private notification: NotificationService,
   ) {}
 
-  // ── Creación desde el bot ────────────────────────────────────────────────
+  // Creación desde el bot
 
   async create(data: CreateReportDto) {
     return this.prisma.$transaction(async (tx) => {
@@ -144,7 +144,7 @@ export class ReportService {
     });
   }
 
-  // ── Listado con filtros (para el panel DECE) ─────────────────────────────
+  // Listado con filtros (para el panel DECE)
 
   async findAll(options: {
     limit?: number;
@@ -178,7 +178,7 @@ export class ReportService {
     return { data, total, limit, offset };
   }
 
-  // ── Detalle completo de un reporte ───────────────────────────────────────
+  // Detalle completo de un reporte
 
   async findOne(id: string) {
     const report = await this.prisma.report.findUnique({
@@ -200,7 +200,7 @@ export class ReportService {
     return report;
   }
 
-  // ── Acciones del panel DECE ──────────────────────────────────────────────
+  // Acciones del panel DECE
 
   async updateStatus(
     id: string,
@@ -259,7 +259,7 @@ export class ReportService {
     });
   }
 
-  // ── Notas internas DECE ──────────────────────────────────────────────────
+  // Notas internas DECE
 
   async addNote(reportId: string, authorId: string, content: string) {
     const report = await this.prisma.report.findUnique({ where: { id: reportId } });
@@ -279,7 +279,7 @@ export class ReportService {
     });
   }
 
-  // ── Estadísticas para el dashboard DECE ─────────────────────────────────
+  // Estadísticas para el dashboard DECE
 
   async getStats(institutionId?: string | null) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
