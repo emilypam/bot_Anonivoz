@@ -12,10 +12,34 @@ const INFORMANT_TYPES = ['Víctima', 'Testigo'];
 
 const BUTTON_ONLY_STEPS = [0, 1, 2, 3, 4, 7, 8];
 
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: '⏳ Pendiente',
+  IN_REVIEW: '🔍 En revisión',
+  RESOLVED: '✅ Resuelto',
+  DISMISSED: '❌ Desestimado',
+};
+
+const HARASSMENT_TYPE_LABELS: Record<string, string> = {
+  PHYSICAL: 'Físico',
+  VERBAL: 'Verbal',
+  SOCIAL: 'Social/Exclusión',
+  CYBERBULLYING: 'Ciberacoso',
+};
+
+function formatDate(date: Date): string {
+  const days = Math.floor((Date.now() - date.getTime()) / 86400000);
+  if (days === 0) return 'hoy';
+  if (days === 1) return 'ayer';
+  if (days < 7) return `hace ${days} días`;
+  if (days < 30) return `hace ${Math.floor(days / 7)} semana(s)`;
+  return `hace ${Math.floor(days / 30)} mes(es)`;
+}
+
 const MAIN_MENU_KB = {
   inline_keyboard: [
     [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
     [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
+    [{ text: '📊 Ver mis reportes', callback_data: 'main_mis_reportes' }],
   ],
 };
 
@@ -699,6 +723,92 @@ export class BotService {
         'Me alegra saberlo. Aquí estaremos si necesitas algo más.',
         { reply_markup: MAIN_MENU_KB },
       );
+    });
+
+    this.bot.action('main_mis_reportes', async (ctx) => {
+      await ctx.answerCbQuery();
+      const telegramUserId = String(ctx.from?.id ?? '');
+
+      const reports = await this.prisma.report.findMany({
+        where: { telegramUserId },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      });
+
+      if (!reports.length) {
+        return ctx.reply(
+          'No tienes reportes registrados aún.\n\nCuando registres uno podrás ver su estado aquí.',
+          { reply_markup: MAIN_MENU_KB },
+        );
+      }
+
+      const buttons = reports.map((r) => [{
+        text: `#${r.reportNumber} — ${STATUS_LABELS[r.status] ?? r.status} — ${formatDate(r.createdAt)}`,
+        callback_data: `ver_reporte_${r.reportNumber}`,
+      }]);
+
+      return ctx.reply(
+        `*Tus reportes*\n\nTienes ${reports.length} reporte(s). Selecciona uno para ver el detalle:`,
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              ...buttons,
+              [{ text: '🏠 Menú principal', callback_data: 'back_main' }],
+            ],
+          },
+        },
+      );
+    });
+
+    this.bot.action(/^ver_reporte_(\d+)$/, async (ctx) => {
+      await ctx.answerCbQuery();
+      if (!('data' in ctx.callbackQuery)) return;
+      const match = ctx.callbackQuery.data.match(/^ver_reporte_(\d+)$/);
+      if (!match) return;
+
+      const reportNumber = parseInt(match[1], 10);
+      const report = await this.prisma.report.findUnique({
+        where: { reportNumber },
+        include: {
+          incident: true,
+          statusHistory: { orderBy: { changedAt: 'desc' }, take: 1 },
+        },
+      });
+
+      if (!report || report.telegramUserId !== String(ctx.from?.id)) {
+        return ctx.reply('No se encontró ese reporte.', { reply_markup: MAIN_MENU_KB });
+      }
+
+      const lastChange = report.statusHistory[0];
+      const lines = [
+        `*Reporte #${report.reportNumber}*`,
+        '',
+        `Estado: ${STATUS_LABELS[report.status] ?? report.status}`,
+        `Registrado: ${formatDate(report.createdAt)}`,
+        report.incident
+          ? `Tipo: ${HARASSMENT_TYPE_LABELS[report.incident.harassmentType] ?? report.incident.harassmentType}`
+          : '',
+        lastChange
+          ? `\nÚltima actualización: ${formatDate(lastChange.changedAt)}`
+          : '',
+        lastChange?.notes ? `Nota del DECE: _${lastChange.notes}_` : '',
+      ].filter(Boolean).join('\n');
+
+      return ctx.reply(lines, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '← Volver a mis reportes', callback_data: 'main_mis_reportes' }],
+            [{ text: '🏠 Menú principal', callback_data: 'back_main' }],
+          ],
+        },
+      });
+    });
+
+    this.bot.action('back_main', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply('¿Qué deseas hacer?', { reply_markup: MAIN_MENU_KB });
     });
 
     this.bot.on('message', (ctx) =>
