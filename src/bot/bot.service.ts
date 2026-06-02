@@ -465,9 +465,20 @@ export class BotService {
         `*Reporte registrado exitosamente*\n\n` +
           `Número de caso: \`${report.reportNumber}\`\n\n` +
           `Gracias por tu valentía. Tu reporte será revisado de forma *confidencial* por las autoridades correspondientes.\n\n` +
-          `Guarda tu número de caso para cualquier seguimiento futuro.\n\n` +
-          `Si necesitas registrar otro incidente, usa /report.`,
+          `Guarda tu número de caso para cualquier seguimiento futuro.`,
         { parse_mode: 'Markdown', reply_markup: { remove_keyboard: true } },
+      );
+
+      await ctx.reply(
+        '¿Cómo te sientes después de reportar esto?',
+        {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: 'Quiero hablar con alguien', callback_data: 'post_report_apoyo' },
+              { text: 'Estoy bien, gracias', callback_data: 'post_report_ok' },
+            ]],
+          },
+        },
       );
 
       await ctx.scene.leave();
@@ -599,6 +610,16 @@ export class BotService {
         'No hay ningún reporte en curso.\n\nUsa /report para comenzar uno nuevo.',
       ),
     );
+
+    this.bot.action('post_report_apoyo', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.scene.enter('support_scene');
+    });
+
+    this.bot.action('post_report_ok', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply('Me alegra saberlo. Recuerda que puedes usar /apoyo cuando lo necesites.');
+    });
 
     this.bot.on('message', (ctx) =>
       ctx.reply('No reconozco ese comando. Usa /help para ver las opciones disponibles.'),
