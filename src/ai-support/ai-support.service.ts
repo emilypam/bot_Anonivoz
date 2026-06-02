@@ -31,10 +31,10 @@ export class AiSupportService {
 
   async chat(history: ChatMessage[], userMessage: string): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash-latest',
-        systemInstruction: SYSTEM_PROMPT,
-      });
+      const model = this.genAI.getGenerativeModel(
+        { model: 'gemini-1.5-flash', systemInstruction: SYSTEM_PROMPT },
+        { apiVersion: 'v1' },
+      );
 
       const chat = model.startChat({
         history,
