@@ -372,6 +372,16 @@ export class BotService {
       await ctx.reply('Reporte cancelado. Usa /report para comenzar de nuevo.');
     });
 
+    wizard.command('start', async (ctx) => {
+      await ctx.scene.leave();
+      await ctx.reply(
+        ctx.session.institutionName
+          ? `*AnoniVoz — ${ctx.session.institutionName}*\n\nUsa /report para registrar un incidente o /apoyo para hablar con alguien.`
+          : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
+        { parse_mode: 'Markdown' },
+      );
+    });
+
     wizard.command('help', async (ctx) => {
       await ctx.reply(
         '*Ayuda — AnoniVoz*\n\n' +
@@ -519,6 +529,17 @@ export class BotService {
       ctx.session.chatHistory = [];
       await ctx.scene.leave();
       await ctx.reply('Has salido del modo de apoyo. Usa /apoyo para volver cuando lo necesites.');
+    });
+
+    scene.command('start', async (ctx) => {
+      ctx.session.chatHistory = [];
+      await ctx.scene.leave();
+      await ctx.reply(
+        ctx.session.institutionName
+          ? `*Bienvenido de nuevo a AnoniVoz*\n\nInstitución: *${ctx.session.institutionName}*\n\nUsa /report para registrar un incidente o /apoyo para hablar con alguien.`
+          : '*Bienvenido a AnoniVoz*\n\nPara registrar un reporte accede a través del enlace o código QR de tu institución.',
+        { parse_mode: 'Markdown' },
+      );
     });
 
     scene.on('text', async (ctx) => {
