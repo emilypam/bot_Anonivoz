@@ -495,7 +495,15 @@ export class BotService {
     scene.enter(async (ctx) => {
       ctx.session.chatHistory = [];
       await ctx.reply(
-        'Estoy aqui para escucharte. Cuentame como te sientes o que esta pasando.\n\nEscribe /salir cuando quieras terminar.',
+        '👋 Hola, soy el asistente de apoyo de *AnoniVoz*.\n\n' +
+          'Estoy aquí para escucharte y acompañarte. Puedo ayudarte a:\n' +
+          '• Hablar sobre cómo te sientes\n' +
+          '• Darte orientación si viviste o presenciaste acoso\n' +
+          '• Aconsejarte sobre qué pasos puedes seguir\n\n' +
+          'Todo lo que me cuentes es confidencial. No soy un psicólogo, pero sí un primer espacio seguro para desahogarte.\n\n' +
+          'Cuéntame, ¿cómo estás? ¿Qué está pasando?\n\n' +
+          '_Escribe_ /salir _cuando quieras terminar._',
+        { parse_mode: 'Markdown' },
       );
     });
 
