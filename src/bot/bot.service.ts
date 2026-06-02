@@ -519,12 +519,19 @@ export class BotService {
 
     this.bot.command('help', (ctx) =>
       ctx.reply(
-        '*Ayuda — AnonIvoz*\n\n' +
+        '*Ayuda — AnoniVoz*\n\n' +
           '/start — Mensaje de bienvenida\n' +
           '/report — Registrar un nuevo reporte\n' +
+          '/cancel — Cancelar el reporte en curso\n' +
           '/help — Mostrar esta ayuda\n\n' +
           'En casi todos los pasos solo debes presionar un botón. Solo te pedirá escribir cuando sea estrictamente necesario.',
         { parse_mode: 'Markdown' },
+      ),
+    );
+
+    this.bot.command('cancel', (ctx) =>
+      ctx.reply(
+        'No hay ningún reporte en curso.\n\nUsa /report para comenzar uno nuevo.',
       ),
     );
 
