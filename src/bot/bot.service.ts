@@ -290,6 +290,7 @@ export class BotService {
 
     wizard.action('wizard_cancel', async (ctx) => {
       await ctx.answerCbQuery();
+      this.trackEvent(String(ctx.from?.id ?? ''), 'REPORT_ABANDONED', ctx.session.institutionId);
       await ctx.scene.leave();
       await ctx.reply(
         'Reporte cancelado. ¿Qué deseas hacer?',
@@ -512,6 +513,8 @@ export class BotService {
         descriptionText: ctx.session.descriptionText ?? '',
       });
 
+      this.trackEvent(String(ctx.from?.id ?? ''), 'REPORT_COMPLETED', ctx.session.institutionId);
+
       await ctx.reply(
         `*Reporte registrado exitosamente*\n\n` +
           `Número de caso: \`${report.reportNumber}\`\n\n` +
@@ -654,6 +657,8 @@ export class BotService {
         ctx.session.institutionId = institution.id;
         ctx.session.institutionName = institution.name;
 
+        this.trackEvent(String(ctx.from?.id ?? ''), 'BOT_START', institution.id);
+
         return ctx.reply(
           `*Bienvenido a AnoniVoz*\n\n` +
             `Institución: *${institution.name}*\n\n` +
@@ -703,12 +708,14 @@ export class BotService {
       if (!ctx.session.institutionId) {
         return ctx.reply('Para registrar un reporte accede a través del enlace o código QR de tu institución.');
       }
+      this.trackEvent(String(ctx.from?.id ?? ''), 'REPORT_STARTED', ctx.session.institutionId);
       await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
       return ctx.scene.enter('report_wizard');
     });
 
     this.bot.action('main_apoyo', async (ctx) => {
       await ctx.answerCbQuery();
+      this.trackEvent(String(ctx.from?.id ?? ''), 'SUPPORT_STARTED', ctx.session.institutionId);
       return ctx.scene.enter('support_scene');
     });
 
@@ -817,6 +824,16 @@ export class BotService {
         { reply_markup: MAIN_MENU_KB },
       ),
     );
+  }
+
+  private trackEvent(
+    telegramUserId: string,
+    eventType: 'BOT_START' | 'REPORT_STARTED' | 'REPORT_COMPLETED' | 'REPORT_ABANDONED' | 'SUPPORT_STARTED',
+    institutionId?: string,
+  ) {
+    this.prisma.botEvent
+      .create({ data: { telegramUserId, eventType, institutionId } })
+      .catch((err: Error) => this.logger.warn('trackEvent error:', err?.message));
   }
 
   getBot() {

@@ -6,6 +6,7 @@ import { ReportModule } from './report/report.module';
 import { AuthModule } from './auth/auth.module';
 import { DeceModule } from './dece/dece.module';
 import { InstitutionModule } from './institution/institution.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { InstitutionModule } from './institution/institution.module';
     AuthModule,
     DeceModule,
     InstitutionModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

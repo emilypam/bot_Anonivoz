@@ -87,8 +87,9 @@ model Institution {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members DeceMember[]
-  reports Report[]
+  members   DeceMember[]
+  reports   Report[]
+  botEvents BotEvent[]
 
   @@index([code])
   @@index([active])
@@ -233,4 +234,27 @@ model TelegramSession {
   key       String   @id
   data      String   @db.Text
   updatedAt DateTime @updatedAt
+}
+
+enum BotEventType {
+  BOT_START
+  REPORT_STARTED
+  REPORT_COMPLETED
+  REPORT_ABANDONED
+  SUPPORT_STARTED
+}
+
+model BotEvent {
+  id             String       @id @default(uuid())
+  telegramUserId String
+  institutionId  String?
+  eventType      BotEventType
+  createdAt      DateTime     @default(now())
+
+  institution Institution? @relation(fields: [institutionId], references: [id])
+
+  @@index([telegramUserId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([institutionId])
 }
