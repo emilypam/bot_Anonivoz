@@ -119,4 +119,12 @@ export class AnalyticsService {
       byInstitution,
     };
   }
+
+  async deleteReportsBefore(dateStr: string) {
+    const before = new Date(dateStr);
+    const { count } = await this.prisma.report.deleteMany({
+      where: { createdAt: { lt: before } },
+    });
+    return { deleted: count, before: dateStr };
+  }
 }

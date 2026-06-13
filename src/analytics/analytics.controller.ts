@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { JwtAdminGuard } from '../auth/jwt-admin.guard';
 
@@ -10,5 +10,10 @@ export class AnalyticsController {
   @Get('bot-usage')
   getBotUsage() {
     return this.analyticsService.getBotUsage();
+  }
+
+  @Delete('cleanup-old-reports')
+  cleanupOldReports() {
+    return this.analyticsService.deleteReportsBefore('2026-06-10');
   }
 }
