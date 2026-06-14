@@ -947,7 +947,8 @@ export class BotService {
   ) {
     this.prisma.botEvent
       .create({ data: { telegramUserId, eventType, institutionId } })
-      .catch((err: Error) => this.logger.warn('trackEvent error:', err?.message));
+      .then(() => this.logger.debug(`trackEvent OK: ${eventType} uid=${telegramUserId}`))
+      .catch((err: Error) => this.logger.error(`trackEvent FAILED [${eventType}]: ${err?.message}`, err?.stack));
   }
 
   getBot() {
