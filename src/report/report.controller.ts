@@ -33,6 +33,8 @@ export class ReportController {
     @Query('harassmentType') harassmentType?: HarassmentType,
     @Query('assignedToId') assignedToId?: string,
     @Query('institutionId') institutionIdParam?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
     @Request() req?: any,
   ) {
     const user = req?.user;
@@ -48,6 +50,8 @@ export class ReportController {
       harassmentType,
       assignedToId,
       institutionId,
+      dateFrom,
+      dateTo,
     });
   }
 

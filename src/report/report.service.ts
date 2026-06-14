@@ -154,8 +154,10 @@ export class ReportService {
     harassmentType?: HarassmentType;
     assignedToId?: string;
     institutionId?: string | null;
+    dateFrom?: string;
+    dateTo?: string;
   } = {}) {
-    const { limit = 20, offset = 0, status, priority, harassmentType, assignedToId, institutionId } = options;
+    const { limit = 20, offset = 0, status, priority, harassmentType, assignedToId, institutionId, dateFrom, dateTo } = options;
 
     const where: any = {};
     if (status) where.status = status;
@@ -163,13 +165,22 @@ export class ReportService {
     if (assignedToId) where.assignedToId = assignedToId;
     if (harassmentType) where.incident = { harassmentType };
     if (institutionId) where.institutionId = institutionId;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setDate(to.getDate() + 1);
+        where.createdAt.lt = to;
+      }
+    }
 
     const [data, total] = await Promise.all([
       this.prisma.report.findMany({
         where,
         take: limit,
         skip: offset,
-        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        orderBy: { createdAt: 'desc' },
         include: REPORT_LIST_INCLUDE,
       }),
       this.prisma.report.count({ where }),
