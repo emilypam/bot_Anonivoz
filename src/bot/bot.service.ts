@@ -40,6 +40,7 @@ const MAIN_MENU_KB = {
     [{ text: '📋 Registrar un incidente', callback_data: 'main_report' }],
     [{ text: '💬 Necesito apoyo emocional', callback_data: 'main_apoyo' }],
     [{ text: '📊 Ver mis reportes', callback_data: 'main_mis_reportes' }],
+    [{ text: 'ℹ️ Mis derechos y la ley', callback_data: 'main_info' }],
   ],
 };
 
@@ -811,6 +812,87 @@ export class BotService {
           ],
         },
       });
+    });
+
+    const INFO_MENU_KB = {
+      inline_keyboard: [
+        [{ text: '📚 ¿Qué es el acoso escolar?', callback_data: 'info_que_es' }],
+        [{ text: '⚖️ Mis derechos como estudiante', callback_data: 'info_derechos' }],
+        [{ text: '⚠️ Sanciones para el agresor', callback_data: 'info_sanciones' }],
+        [{ text: '🔍 ¿Qué pasa cuando reporto?', callback_data: 'info_proceso' }],
+        [{ text: '🏠 Menú principal', callback_data: 'back_main' }],
+      ],
+    };
+
+    this.bot.action('main_info', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        'ℹ️ *Información — Tus derechos y la ley*\n\n' +
+        'La *Ley Orgánica de Educación Intercultural (LOEI)* te protege.\n\n' +
+        'Selecciona un tema para saber más:',
+        { parse_mode: 'Markdown', reply_markup: INFO_MENU_KB },
+      );
+    });
+
+    this.bot.action('info_que_es', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '📚 *¿Qué es el acoso escolar?*\n\n' +
+        'El acoso escolar o *bullying* es cualquier acto repetido de agresión física, verbal, psicológica o digital que cause daño a otra persona dentro del entorno educativo.\n\n' +
+        'La LOEI lo considera una *falta grave* (Art. 132 y 133) y obliga a las instituciones a prevenirlo y sancionarlo.\n\n' +
+        '*Tipos reconocidos:*\n' +
+        '• _Físico_: golpes, empujones, daño a objetos\n' +
+        '• _Verbal_: insultos, apodos, amenazas\n' +
+        '• _Social_: exclusión, rumores, manipulación grupal\n' +
+        '• _Ciberacoso_: hostigamiento por redes sociales, mensajes o fotos',
+        { parse_mode: 'Markdown', reply_markup: INFO_MENU_KB },
+      );
+    });
+
+    this.bot.action('info_derechos', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '⚖️ *Mis derechos como estudiante*\n\n' +
+        '📌 *Art. 7, lit. i* — Tienes derecho a recibir protección en situaciones de riesgo y a denunciar cualquier violación sin miedo a represalias.\n\n' +
+        '📌 *Art. 7, lit. b* — Tienes derecho a educarte en un entorno seguro, sin discriminación ni violencia.\n\n' +
+        '📌 *Art. 11, lit. s* — Los docentes y directivos tienen la *obligación legal* de escucharte y actuar cuando reportas un caso.\n\n' +
+        '📌 *Art. 58, lit. c* — La institución debe garantizar tu protección y bienestar dentro del plantel.\n\n' +
+        'Tu identidad está protegida. Nadie puede revelar quién realizó el reporte.',
+        { parse_mode: 'Markdown', reply_markup: INFO_MENU_KB },
+      );
+    });
+
+    this.bot.action('info_sanciones', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '⚠️ *Sanciones para quien comete acoso*\n\n' +
+        'La LOEI establece sanciones claras (Art. 132 y 133):\n\n' +
+        '*Para estudiantes agresores:*\n' +
+        '• Disculpa pública o privada\n' +
+        '• Trabajo comunitario dentro de la institución\n' +
+        '• Suspensión temporal de clases\n' +
+        '• Separación definitiva en casos graves\n\n' +
+        '*Para docentes o personal que no actúen:*\n' +
+        '• Sanción disciplinaria por omisión (Art. 132)\n' +
+        '• La dirección está obligada a reportar al DECE y a las autoridades superiores\n\n' +
+        'Todos los procesos siguen el *Código de Convivencia* de la institución.',
+        { parse_mode: 'Markdown', reply_markup: INFO_MENU_KB },
+      );
+    });
+
+    this.bot.action('info_proceso', async (ctx) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        '🔍 *¿Qué pasa cuando hago un reporte?*\n\n' +
+        '1️⃣ *Tu reporte llega al DECE* de manera confidencial\n' +
+        '2️⃣ *El DECE revisa el caso* y puede investigar o solicitar más información\n' +
+        '3️⃣ *Se aplica el proceso* establecido en el Código de Convivencia (Art. 134 LOEI)\n' +
+        '4️⃣ *Si dejaste tus datos*, un orientador puede contactarte de forma discreta\n' +
+        '5️⃣ *El caso se cierra* con la medida correctiva o sanción que corresponda\n\n' +
+        'La LOEI *prohíbe expresamente* cualquier represalia contra quien denuncia.\n' +
+        'Tu anonimato está protegido en todo momento. 🔒',
+        { parse_mode: 'Markdown', reply_markup: INFO_MENU_KB },
+      );
     });
 
     this.bot.action('back_main', async (ctx) => {
