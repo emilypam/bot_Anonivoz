@@ -683,8 +683,21 @@ export class BotService {
           'Para registrar un reporte debes acceder primero a través del enlace de tu institución.\n\nSolicita el QR o enlace a las autoridades de tu colegio.',
         );
       }
-      await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
-      return ctx.scene.enter('report_wizard');
+      return ctx.reply(
+        '⚠️ *Antes de continuar — Información importante*\n\n' +
+        'Los reportes deben basarse en *hechos reales*. Presentar una denuncia falsa o maliciosa es una *falta grave* sancionada por el Código de Convivencia institucional y puede tener consecuencias disciplinarias para quien la realice (Art. 132 LOEI).\n\n' +
+        'AnoniVoz es una herramienta de protección. Úsala con responsabilidad.\n\n' +
+        '¿Deseas continuar con el registro del reporte?',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '✅ Entiendo, quiero continuar', callback_data: 'confirm_report' }],
+              [{ text: '❌ Cancelar', callback_data: 'back_main' }],
+            ],
+          },
+        },
+      );
     });
 
     this.bot.command('help', (ctx) =>
@@ -709,6 +722,25 @@ export class BotService {
       if (!ctx.session.institutionId) {
         return ctx.reply('Para registrar un reporte accede a través del enlace o código QR de tu institución.');
       }
+      return ctx.reply(
+        '⚠️ *Antes de continuar — Información importante*\n\n' +
+        'Los reportes deben basarse en *hechos reales*. Presentar una denuncia falsa o maliciosa es una *falta grave* sancionada por el Código de Convivencia institucional y puede tener consecuencias disciplinarias para quien la realice (Art. 132 LOEI).\n\n' +
+        'AnoniVoz es una herramienta de protección. Úsala con responsabilidad.\n\n' +
+        '¿Deseas continuar con el registro del reporte?',
+        {
+          parse_mode: 'Markdown',
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: '✅ Entiendo, quiero continuar', callback_data: 'confirm_report' }],
+              [{ text: '❌ Cancelar', callback_data: 'back_main' }],
+            ],
+          },
+        },
+      );
+    });
+
+    this.bot.action('confirm_report', async (ctx) => {
+      await ctx.answerCbQuery();
       this.trackEvent(String(ctx.from?.id ?? ''), 'REPORT_STARTED', ctx.session.institutionId);
       await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
       return ctx.scene.enter('report_wizard');
