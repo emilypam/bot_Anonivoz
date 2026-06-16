@@ -8,8 +8,11 @@ import {
   Query,
   UseGuards,
   Request,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
+import { BotService } from '../bot/bot.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { HarassmentType, Priority, ReportStatus } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,7 +20,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 @Controller('api/reports')
 @UseGuards(JwtAuthGuard)
 export class ReportController {
-  constructor(private readonly reportService: ReportService) {}
+  constructor(
+    private readonly reportService: ReportService,
+    @Inject(forwardRef(() => BotService)) private readonly botService: BotService,
+  ) {}
 
   @Post()
   create(@Body() dto: CreateReportDto) {
@@ -109,5 +115,22 @@ export class ReportController {
   @Get(':id/notes')
   getNotes(@Param('id') id: string) {
     return this.reportService.getNotes(id);
+  }
+
+  @Post(':id/message')
+  async sendMessage(
+    @Param('id') id: string,
+    @Body() body: { content: string },
+  ) {
+    const report = await this.reportService.findOne(id);
+    if (!report.wantsContact) {
+      return { sent: false, reason: 'El denunciante no solicitó contacto.' };
+    }
+    const text =
+      `📩 *Mensaje del equipo DECE*\n\n` +
+      `${body.content}\n\n` +
+      `_Este mensaje corresponde a tu denuncia #${report.reportNumber}._`;
+    await this.botService.sendDirectMessage(report.telegramUserId, text);
+    return { sent: true };
   }
 }

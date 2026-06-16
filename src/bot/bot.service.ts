@@ -951,6 +951,10 @@ export class BotService {
       .catch((err: Error) => this.logger.error(`trackEvent FAILED [${eventType}]: ${err?.message}`, err?.stack));
   }
 
+  async sendDirectMessage(telegramUserId: string, text: string) {
+    await this.bot.telegram.sendMessage(telegramUserId, text, { parse_mode: 'Markdown' });
+  }
+
   getBot() {
     return this.bot;
   }
