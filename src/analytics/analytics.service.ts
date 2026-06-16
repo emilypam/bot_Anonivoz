@@ -68,12 +68,9 @@ export class AnalyticsService {
 
     const completionRate =
       totalReportStarts > 0
-        ? Math.round((totalReportCompleted / totalReportStarts) * 1000) / 10
+        ? Math.round((totalReportCompleted / totalReportStarts) * 100)
         : 0;
-    const abandonRate =
-      totalReportStarts > 0
-        ? Math.round((totalReportAbandoned / totalReportStarts) * 1000) / 10
-        : 0;
+    const abandonRate = 100 - completionRate;
 
     // Timeline — últimos 30 días
     const timelineMap: Record<string, { starts: number; reportStarts: number; reportCompleted: number }> = {};

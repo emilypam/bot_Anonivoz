@@ -242,6 +242,7 @@ enum BotEventType {
   REPORT_COMPLETED
   REPORT_ABANDONED
   SUPPORT_STARTED
+  INFO_ACCESSED
 }
 
 model BotEvent {

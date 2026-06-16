@@ -858,6 +858,7 @@ export class BotService {
 
     this.bot.action('main_info', async (ctx) => {
       await ctx.answerCbQuery();
+      this.trackEvent(String(ctx.from?.id ?? ''), 'INFO_ACCESSED', ctx.session?.institutionId);
       await ctx.reply(
         'ℹ️ *Información — Tus derechos y la ley*\n\n' +
         'La *Ley Orgánica de Educación Intercultural (LOEI)* te protege.\n\n' +
