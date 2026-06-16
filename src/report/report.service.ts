@@ -91,10 +91,49 @@ export class ReportService {
     private notification: NotificationService,
   ) {}
 
+  // Prioridad automática basada en información recibida
+
+  private calculatePriority(data: CreateReportDto): Priority {
+    let score = 0;
+
+    // Tipo de acoso
+    if (data.harassmentType === 'Físico') score += 3;
+    else if (data.harassmentType === 'Ciberacoso') score += 2;
+    else score += 1; // Verbal / Social
+
+    // Frecuencia
+    if (data.frequencyLevel === 'Diariamente') score += 3;
+    else if (data.frequencyLevel === 'Semanalmente') score += 2;
+    else score += 1; // Una sola vez
+
+    // Evidencia (fuerte indicador de veracidad)
+    if (data.evidenceUrl) score += 2;
+
+    // Testigos
+    if (data.witnessInfo) score += 1;
+
+    // Longitud de la descripción libre
+    if (data.descriptionText.length > 200) score += 2;
+    else if (data.descriptionText.length > 80) score += 1;
+
+    // Situación reincidente
+    if (data.previousReport) score += 1;
+
+    // Dispuesto a ser contactado
+    if (data.wantsContact) score += 1;
+
+    if (score >= 10) return 'URGENT';
+    if (score >= 7)  return 'HIGH';
+    if (score >= 4)  return 'MEDIUM';
+    return 'LOW';
+  }
+
   // Creación desde el bot
 
   async create(data: CreateReportDto) {
     return this.prisma.$transaction(async (tx) => {
+      const priority = this.calculatePriority(data);
+
       const report = await tx.report.create({
         data: {
           telegramUserId: data.telegramUserId,
@@ -102,6 +141,7 @@ export class ReportService {
           informantType: INFORMANT_MAP[data.informantType],
           wantsContact: data.wantsContact,
           previousReport: data.previousReport,
+          priority,
         },
       });
 
