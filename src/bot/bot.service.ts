@@ -946,7 +946,7 @@ export class BotService {
 
   private trackEvent(
     telegramUserId: string,
-    eventType: 'BOT_START' | 'REPORT_STARTED' | 'REPORT_COMPLETED' | 'REPORT_ABANDONED' | 'SUPPORT_STARTED',
+    eventType: 'BOT_START' | 'REPORT_STARTED' | 'REPORT_COMPLETED' | 'REPORT_ABANDONED' | 'SUPPORT_STARTED' | 'INFO_ACCESSED',
     institutionId?: string,
   ) {
     this.prisma.botEvent
