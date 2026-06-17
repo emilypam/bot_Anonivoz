@@ -131,6 +131,20 @@ export class ReportService {
   // Creación desde el bot
 
   async create(data: CreateReportDto) {
+    const mappedInformant  = INFORMANT_MAP[data.informantType];
+    const mappedHarassment = HARASSMENT_MAP[data.harassmentType];
+    const mappedFrequency  = FREQUENCY_MAP[data.frequencyLevel];
+    const mappedLocation   = LOCATION_MAP[data.locationTag];
+    const mappedDate       = DATE_MAP[data.incidentDate];
+
+    if (!mappedInformant || !mappedHarassment || !mappedFrequency || !mappedLocation || !mappedDate) {
+      throw new Error(
+        `Datos incompletos del wizard — informant="${data.informantType}" ` +
+        `harassment="${data.harassmentType}" freq="${data.frequencyLevel}" ` +
+        `location="${data.locationTag}" date="${data.incidentDate}"`,
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const priority = this.calculatePriority(data);
 
@@ -138,7 +152,7 @@ export class ReportService {
         data: {
           telegramUserId: data.telegramUserId,
           institutionId: data.institutionId ?? null,
-          informantType: INFORMANT_MAP[data.informantType],
+          informantType: mappedInformant,
           wantsContact: data.wantsContact,
           previousReport: data.previousReport,
           priority,
@@ -148,10 +162,10 @@ export class ReportService {
       await tx.incident.create({
         data: {
           reportId: report.id,
-          harassmentType: HARASSMENT_MAP[data.harassmentType],
-          frequencyLevel: FREQUENCY_MAP[data.frequencyLevel],
-          locationTag: LOCATION_MAP[data.locationTag],
-          incidentDateApprox: DATE_MAP[data.incidentDate],
+          harassmentType: mappedHarassment,
+          frequencyLevel: mappedFrequency,
+          locationTag: mappedLocation,
+          incidentDateApprox: mappedDate,
           description: data.descriptionText,
         },
       });

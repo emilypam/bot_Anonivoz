@@ -741,6 +741,9 @@ export class BotService {
 
     this.bot.action('confirm_report', async (ctx) => {
       await ctx.answerCbQuery();
+      // Limpiar datos previos del wizard para que no contaminen el nuevo intento
+      const { institutionId, institutionName, chatHistory } = ctx.session;
+      ctx.session = { institutionId, institutionName, chatHistory } as any;
       this.trackEvent(String(ctx.from?.id ?? ''), 'REPORT_STARTED', ctx.session.institutionId);
       await ctx.reply('Vamos a registrar tu reporte paso a paso.\n\nEn la mayoría de pasos solo debes presionar un botón.');
       return ctx.scene.enter('report_wizard');
