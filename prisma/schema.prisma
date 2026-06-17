@@ -259,3 +259,18 @@ model BotEvent {
   @@index([createdAt])
   @@index([institutionId])
 }
+
+model LoginLog {
+  id              String   @id @default(uuid())
+  userId          String
+  userName        String
+  userEmail       String
+  userRole        String
+  userType        String   // 'dece' | 'admin'
+  institutionId   String?
+  institutionName String?
+  createdAt       DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}

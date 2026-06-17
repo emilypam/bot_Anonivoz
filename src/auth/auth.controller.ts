@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { JwtAdminGuard } from './jwt-admin.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -9,6 +10,12 @@ export class AuthController {
   @HttpCode(200)
   login(@Body() body: { email: string; password: string }) {
     return this.auth.login(body.email, body.password);
+  }
+
+  @Get('login-logs')
+  @UseGuards(JwtAdminGuard)
+  getLoginLogs(@Query('limit') limit?: string) {
+    return this.auth.getLoginLogs(limit ? Math.min(parseInt(limit), 500) : 100);
   }
 
   @Post('admin/bootstrap')

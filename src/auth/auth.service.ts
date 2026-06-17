@@ -16,11 +16,25 @@ export class AuthService {
 
   async login(email: string, password: string) {
     // Intentar como miembro DECE primero
-    const member = await this.prisma.deceMember.findUnique({ where: { email } });
+    const member = await this.prisma.deceMember.findUnique({
+      where: { email },
+      include: { institution: { select: { name: true } } },
+    });
     if (member) {
       if (!member.active) throw new UnauthorizedException('Cuenta desactivada');
       const valid = await bcrypt.compare(password, member.password);
       if (!valid) throw new UnauthorizedException('Credenciales incorrectas');
+      await this.prisma.loginLog.create({
+        data: {
+          userId: member.id,
+          userName: member.name,
+          userEmail: member.email,
+          userRole: member.role,
+          userType: 'dece',
+          institutionId: member.institutionId,
+          institutionName: member.institution?.name ?? null,
+        },
+      });
       const token = this.jwt.sign({
         sub: member.id,
         email: member.email,
@@ -47,6 +61,17 @@ export class AuthService {
       if (!admin.active) throw new UnauthorizedException('Cuenta desactivada');
       const valid = await bcrypt.compare(password, admin.password);
       if (!valid) throw new UnauthorizedException('Credenciales incorrectas');
+      await this.prisma.loginLog.create({
+        data: {
+          userId: admin.id,
+          userName: admin.name,
+          userEmail: admin.email,
+          userRole: 'ADMIN',
+          userType: 'admin',
+          institutionId: null,
+          institutionName: null,
+        },
+      });
       const token = this.jwt.sign({
         sub: admin.id,
         email: admin.email,
@@ -68,6 +93,13 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Credenciales incorrectas');
+  }
+
+  async getLoginLogs(limit = 100) {
+    return this.prisma.loginLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
   }
 
   async bootstrapAdmin(body: {
